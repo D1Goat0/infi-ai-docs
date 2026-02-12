@@ -138,26 +138,26 @@ function loadMolt() {
 }
 
 $('sendChat').onclick = async () => {
-  const gatewayUrl = $('gatewayUrl').value.trim();
   const message = $('chatInput').value.trim();
   if (!message) return;
   const sessionKey = $('sessionKey').value.trim() || 'agent:main:main';
 
-  if (!gatewayUrl) {
-    $('chatLog').textContent += `You: ${message}\nInfi AI: Gateway not configured yet.\n\n`;
-    $('chatInput').value = '';
-    return;
-  }
-
   $('chatLog').textContent += `You: ${message}\n`;
   try {
-    const res = await fetch(`${gatewayUrl.replace(/\/$/, '')}/v1/sessions/send`, {
+    const res = await fetch(`/.netlify/functions/send`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ sessionKey, message })
     });
-    const data = await res.json();
-    $('chatLog').textContent += `Infi AI: ${JSON.stringify(data)}\n\n`;
+    const payload = await res.json();
+
+    if (!payload?.ok) {
+      const err = payload?.data?.error || `Request failed (status ${payload?.status})`;
+      $('chatLog').textContent += `Infi AI: ${err}\n\n`;
+    } else {
+      // sessions_send returns an ack; we log it as confirmation.
+      $('chatLog').textContent += `Infi AI: sent ✓\n\n`;
+    }
   } catch (e) {
     $('chatLog').textContent += `Infi AI: Request failed (${e.message})\n\n`;
   }

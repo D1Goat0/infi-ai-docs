@@ -43,14 +43,12 @@
     <section class="view" data-view="chat">
       <article class="card">
         <h3>Chat with Infi AI</h3>
-        <p class="muted">UI is ready. To enable live chat, connect your OpenClaw gateway endpoint below.</p>
-        <label>Gateway URL</label>
-        <input id="gatewayUrl" placeholder="https://your-gateway-url" />
+        <p class="muted">Chat is routed through a Netlify Function (so your gateway token stays server-side). If you see “Missing server configuration”, we just need to set Netlify env vars <code>GATEWAY_URL</code> and <code>GATEWAY_TOKEN</code>.</p>
         <label>Session Key (optional)</label>
         <input id="sessionKey" placeholder="agent:main:main" />
         <label>Message</label>
         <textarea id="chatInput" placeholder="Type a message..."></textarea>
-        <button id="sendChat">Send (placeholder mode)</button>
+        <button id="sendChat">Send</button>
         <pre id="chatLog" class="log"></pre>
       </article>
     </section>
