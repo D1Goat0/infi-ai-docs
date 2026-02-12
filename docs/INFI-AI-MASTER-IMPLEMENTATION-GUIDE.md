@@ -267,6 +267,21 @@ Must pass all:
 
 ## 15) Device Coverage Strategy (v1 -> v2 expansion)
 
+### 15.1 Device coverage scoring (0–100)
+To avoid “support sprawl”, every candidate board gets a numeric score and must meet a minimum before entering Beta.
+
+**Scoring dimensions (suggested weights):**
+- **Demand / install-base signal (0–20):** sales/usage/community demand evidence.
+- **Capability fit (0–25):** UI+RF+memory headroom vs target tier.
+- **Variance risk (0–15):** BOM drift, vendor revisions, clone risk.
+- **Validation cost (0–15):** HIL availability, regression time, RF harness effort.
+- **Support burden forecast (0–15):** docs load + likely failure modes.
+- **Monetization leverage (0–10):** does this board unlock Pro/Team value?
+
+**Minimum entry thresholds:**
+- **Beta entry:** >=70 and no single dimension <5.
+- **Recommended promotion eligibility:** >=80 and all objective promotion gates (§11) complete.
+
 ### v1 (ship now)
 - lock to three ESP32-S3 recommended boards
 - maintain one constrained beta lane (classic ESP32 + F446 pilot)

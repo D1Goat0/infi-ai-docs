@@ -172,12 +172,38 @@ If a task does not clearly improve 1-3, defer it.
 
 ## 12) Meeting and Reporting Templates
 
+### 12.1 Executable roadmap item template (RFC-lite)
+Every roadmap item must be executable (assignable + testable) and tied to an objective gate.
+
+- **ID / name:**
+- **User outcome:** (what changes for the user)
+- **Scope:** (explicitly in-scope)
+- **Not in scope:** (explicit exclusions)
+- **Boards impacted:** (recommended/beta list)
+- **Tier impacted:** (Tiny/Medium/Heavy)
+- **Safety class:** (S0/S1/S2/S3)
+- **Acceptance criteria:** (measurable; include routing/latency/soak targets)
+- **Dependencies:** (repos, modules, datasets, hardware)
+- **Risk notes:** (top 1–3)
+- **Owner / reviewer:**
+- **Exit gate:** (which gate section; what “green” means)
+
+### 12.2 Roadmap scoring rubric (Impact x Effort x Reach)
+Use a consistent scoring rubric to keep planning decisions comparable week-to-week.
+
+- **Impact (1–5):** user value and defect reduction.
+- **Effort (1–5):** engineering + validation + docs.
+- **Reach (1–5):** coverage across recommended boards.
+- **Risk penalty (0–3):** subtract for RF/UI concurrency, BOM variance, safety surface.
+
+**Suggested priority score:** `(Impact * Reach) - (Effort + RiskPenalty)`.
+
 ### Weekly summary (Friday)
-- shipped this week
-- failed/held items
-- key metric trends
+- shipped this week (link to PR/commit IDs)
+- failed/held items (why)
+- key metric trends (routing, latency, CI stability)
 - top 3 risks and mitigations
-- next week locked priorities
+- next week locked priorities (exactly 3)
 
 ### Milestone review (Phase gate)
 - gate checklist status
