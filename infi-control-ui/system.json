@@ -1,0 +1,13 @@
+{
+  "hostname": "distiller-05d6",
+  "platform": "linux",
+  "arch": "arm64",
+  "node": "v22.22.0",
+  "kernel": "6.12.62+rpt-rpi-2712",
+  "cpuModel": "Cortex-A76",
+  "cpuCores": 4,
+  "totalMemoryGb": "3.95",
+  "freeMemoryGb": "2.12",
+  "uptimeHours": "0.80",
+  "generatedAt": "2026-02-12T01:24:01.117Z"
+}

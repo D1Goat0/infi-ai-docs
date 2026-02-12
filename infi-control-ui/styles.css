@@ -1,70 +1,75 @@
 :root {
-  --bg: #0a0f1f;
-  --card: #121a30;
-  --text: #e8ecff;
-  --muted: #99a3c7;
-  --brand: #4f9cff;
-  --ok: #19c37d;
+  --bg: #070b14;
+  --bg2: #0e1526;
+  --card: #101b31;
+  --text: #e8edff;
+  --muted: #98a6c9;
+  --line: #243357;
+  --brand: #2da7ff;
+  --brand2: #6fe2ff;
 }
-
 * { box-sizing: border-box; }
 body {
   margin: 0;
-  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-  background: radial-gradient(circle at top, #132347, var(--bg));
   color: var(--text);
-}
-
-.topbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid #1f2a4a;
-}
-
-.badge { padding: .35rem .6rem; border-radius: 999px; font-size: .8rem; }
-.badge.ok { background: rgba(25,195,125,.15); color: #7ef0be; border: 1px solid rgba(25,195,125,.4); }
-
-.grid {
-  padding: 1rem;
+  background: linear-gradient(140deg, var(--bg), var(--bg2));
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  min-height: 100vh;
   display: grid;
-  gap: 1rem;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: 250px 1fr;
 }
-
+.sidebar {
+  border-right: 1px solid var(--line);
+  padding: 1rem;
+  background: #0a1222;
+}
+.brand { display: flex; gap: .75rem; align-items: center; margin-bottom: 1.2rem; }
+.brand .dot { width: 14px; height: 14px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, var(--brand2), var(--brand)); box-shadow: 0 0 14px var(--brand); }
+.brand h1 { font-size: 1.05rem; margin: 0; }
+.brand p { margin: 0; color: var(--muted); font-size: .8rem; }
+#tabs { display: grid; gap: .4rem; }
+#tabs button {
+  text-align: left; border: 1px solid var(--line); background: #0f1930; color: var(--text);
+  padding: .62rem .7rem; border-radius: 8px; cursor: pointer;
+}
+#tabs button.active { border-color: var(--brand); background: #112245; }
+.content { padding: 1rem; }
+.topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+.pill { border: 1px solid #2b4e8d; background: #112241; border-radius: 999px; padding: .3rem .6rem; font-size: .8rem; color: #9ecbff; }
+.view { display: none; }
+.view.active { display: block; }
+.grid { display: grid; gap: 1rem; }
+.grid.two { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
 .card {
   background: var(--card);
-  border: 1px solid #273257;
+  border: 1px solid var(--line);
   border-radius: 12px;
   padding: 1rem;
+  margin-bottom: 1rem;
 }
-
-.card.full { grid-column: 1 / -1; }
-
-h1,h2 { margin: 0 0 .75rem; }
-
-.actions { display: flex; gap: .5rem; flex-wrap: wrap; }
-
+h3 { margin: 0 0 .8rem; }
+label { font-size: .86rem; color: var(--muted); }
+input, textarea, select {
+  width: 100%; background: #0d1529; color: var(--text); border: 1px solid #2a3960; border-radius: 8px;
+  padding: .6rem .7rem; margin: .35rem 0 .65rem;
+}
+textarea { min-height: 110px; resize: vertical; }
 button {
-  border: 1px solid #3b4a7a;
-  background: #1d2a50;
-  color: var(--text);
-  padding: .55rem .8rem;
-  border-radius: 8px;
-  cursor: pointer;
+  border: 1px solid #31558f; background: #17315f; color: var(--text);
+  padding: .56rem .82rem; border-radius: 8px; cursor: pointer;
 }
-button:hover { border-color: var(--brand); }
-
-input, textarea {
-  width: 100%;
-  margin: .35rem 0 .65rem;
-  background: #0f1730;
-  border: 1px solid #2d3a63;
-  color: var(--text);
+button:hover { border-color: var(--brand2); }
+.muted { color: var(--muted); }
+.log {
+  white-space: pre-wrap;
+  background: #091124;
+  border: 1px solid #283a62;
   border-radius: 8px;
-  padding: .55rem .65rem;
+  padding: .7rem;
+  min-height: 90px;
 }
-
-textarea { min-height: 130px; resize: vertical; }
-.muted { color: var(--muted); margin: .4rem 0 0; }
+.list-item { border: 1px solid #2c3f67; border-radius: 8px; padding: .55rem .65rem; margin-bottom: .5rem; background: #0c1730; }
+@media (max-width: 860px) {
+  body { grid-template-columns: 1fr; }
+  .sidebar { border-right: none; border-bottom: 1px solid var(--line); }
+}

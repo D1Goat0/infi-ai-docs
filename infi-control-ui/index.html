@@ -3,38 +3,118 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Infi AI Control</title>
+  <title>Infi AI Cloud Console</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <header class="topbar">
-    <h1>Infi AI Cloud Control</h1>
-    <span id="statusBadge" class="badge ok">Online</span>
-  </header>
-
-  <main class="grid">
-    <section class="card">
-      <h2>Quick Actions</h2>
-      <div class="actions">
-        <button id="pingBtn">Ping Check</button>
-        <button id="reportBtn">Generate Report Draft</button>
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="dot"></div>
+      <div>
+        <h1>Infi AI</h1>
+        <p>Cloud Console</p>
       </div>
-      <p id="actionResult" class="muted">Ready.</p>
+    </div>
+    <nav id="tabs"></nav>
+  </aside>
+
+  <main class="content">
+    <header class="topbar">
+      <h2 id="viewTitle">Dashboard</h2>
+      <span class="pill">Infiltra-themed</span>
+    </header>
+
+    <section class="view active" data-view="dashboard">
+      <div class="grid two">
+        <article class="card">
+          <h3>Quick Status</h3>
+          <ul id="quickStatus"></ul>
+        </article>
+        <article class="card">
+          <h3>Website Monitor</h3>
+          <label>Site URL</label>
+          <input id="siteUrl" value="https://infiltra.co" />
+          <button id="checkSite">Run Check</button>
+          <p id="siteResult" class="muted">No check yet.</p>
+        </article>
+      </div>
     </section>
 
-    <section class="card">
-      <h2>Website Monitor</h2>
-      <label for="siteUrl">Site URL</label>
-      <input id="siteUrl" value="https://infiltra.co" />
-      <button id="checkBtn">Check Uptime</button>
-      <p id="uptimeResult" class="muted">No checks yet.</p>
+    <section class="view" data-view="chat">
+      <article class="card">
+        <h3>Chat with Infi AI</h3>
+        <p class="muted">UI is ready. To enable live chat, connect your OpenClaw gateway endpoint below.</p>
+        <label>Gateway URL</label>
+        <input id="gatewayUrl" placeholder="https://your-gateway-url" />
+        <label>Session Key (optional)</label>
+        <input id="sessionKey" placeholder="agent:main:main" />
+        <label>Message</label>
+        <textarea id="chatInput" placeholder="Type a message..."></textarea>
+        <button id="sendChat">Send (placeholder mode)</button>
+        <pre id="chatLog" class="log"></pre>
+      </article>
     </section>
 
-    <section class="card full">
-      <h2>Notes</h2>
-      <textarea id="notes" placeholder="Drop tasks or notes here..."></textarea>
-      <button id="saveNotesBtn">Save Local Note</button>
-      <p id="notesResult" class="muted">Not saved yet.</p>
+    <section class="view" data-view="accounts">
+      <article class="card">
+        <h3>Connected Accounts</h3>
+        <div id="accountsList"></div>
+      </article>
+      <article class="card">
+        <h3>Add / Update Account</h3>
+        <label>Service</label>
+        <select id="acctService">
+          <option>GitHub</option>
+          <option>Netlify</option>
+          <option>Discord</option>
+          <option>Brave Search</option>
+          <option>Moltbook</option>
+        </select>
+        <label>Token / API Key</label>
+        <input id="acctToken" placeholder="Paste key" />
+        <button id="saveAccount">Save Locally</button>
+      </article>
+    </section>
+
+    <section class="view" data-view="plugins">
+      <article class="card">
+        <h3>Plugin Catalog</h3>
+        <div id="pluginCatalog"></div>
+      </article>
+      <article class="card">
+        <h3>Installed Plugins</h3>
+        <div id="installedPlugins"></div>
+      </article>
+    </section>
+
+    <section class="view" data-view="moltbook">
+      <article class="card">
+        <h3>Moltbook Connector</h3>
+        <p class="muted">Store API/login details and setup instructions here.</p>
+        <label>Workspace URL</label>
+        <input id="moltUrl" placeholder="https://..." />
+        <label>API Key / Login Note</label>
+        <input id="moltKey" placeholder="Token or setup notes" />
+        <label>Instructions</label>
+        <textarea id="moltNotes" placeholder="How to access and use Moltbook"></textarea>
+        <button id="saveMolt">Save Moltbook Config</button>
+      </article>
+    </section>
+
+    <section class="view" data-view="system">
+      <div class="grid two">
+        <article class="card">
+          <h3>Device Specs</h3>
+          <pre id="systemSpecs" class="log">Loading...</pre>
+        </article>
+        <article class="card">
+          <h3>Sub Bots</h3>
+          <div id="subbotList"></div>
+          <label>New Sub Bot Name</label>
+          <input id="subbotName" placeholder="e.g. Repo Monitor" />
+          <button id="addSubbot">Add Sub Bot</button>
+        </article>
+      </div>
     </section>
   </main>
 
