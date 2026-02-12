@@ -1,5 +1,7 @@
 # INFI AI Architecture Spec (Cloud + Embedded)
 
+> Alignment note (2026-02-12): Canonical cross-functional execution now lives in `docs/INFI-AI-MASTER-IMPLEMENTATION-GUIDE.md`. Use this file as architecture baseline and read alongside the master guide.
+
 ## 1) Purpose
 INFI AI is a dual-system assistant for Infiltra Network:
 

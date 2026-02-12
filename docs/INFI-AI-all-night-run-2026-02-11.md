@@ -1,5 +1,7 @@
 # INFI AI All‑Night Documentation Run
 
+> Update (2026-02-12): This run output has been expanded into execution-ready manuals: `docs/INFI-AI-MASTER-IMPLEMENTATION-GUIDE.md`, `docs/INFI-AI-HARDWARE-COMPATIBILITY-DEEP-DIVE.md`, `docs/INFI-AI-DATASET-BUILD-SPEC.md`, and `docs/INFI-AI-ROADMAP-AND-OPERATING-RHYTHM.md`.
+
 **Run window:** 2026-02-11 23:31 ET → morning target 2026-02-12
 **Owner:** Luke / Infiltra Network
 **Focus:** Execution plan, hardware tier mapping (ESP32 + STM), firmware integration strategy, monetization
