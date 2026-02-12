@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Infi AI Control</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1>Infi AI Cloud Control</h1>
+    <span id="statusBadge" class="badge ok">Online</span>
+  </header>
+
+  <main class="grid">
+    <section class="card">
+      <h2>Quick Actions</h2>
+      <div class="actions">
+        <button id="pingBtn">Ping Check</button>
+        <button id="reportBtn">Generate Report Draft</button>
+      </div>
+      <p id="actionResult" class="muted">Ready.</p>
+    </section>
+
+    <section class="card">
+      <h2>Website Monitor</h2>
+      <label for="siteUrl">Site URL</label>
+      <input id="siteUrl" value="https://infiltra.co" />
+      <button id="checkBtn">Check Uptime</button>
+      <p id="uptimeResult" class="muted">No checks yet.</p>
+    </section>
+
+    <section class="card full">
+      <h2>Notes</h2>
+      <textarea id="notes" placeholder="Drop tasks or notes here..."></textarea>
+      <button id="saveNotesBtn">Save Local Note</button>
+      <p id="notesResult" class="muted">Not saved yet.</p>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
