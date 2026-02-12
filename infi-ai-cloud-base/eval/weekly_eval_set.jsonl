@@ -1,0 +1,3 @@
+{"id":"strategy-001","task_class":"strategy","prompt":"Define a 7-day plan to ship Tiny-tier intent+router scaffold into pamir-infiltra with minimal refactor.","schema":"strategy_output.schema.json"}
+{"id":"triage-001","task_class":"triage","prompt":"CI is failing on env 'lilygo-cc1101' due to missing header in src/Modules/Functions/Rf. Triage severity and recommend fix.","schema":"triage_output.schema.json"}
+{"id":"digest-001","task_class":"digest","prompt":"Summarize today's meaningful changes across repos/pamir-infiltra and docs/ into 5 highlights with next actions.","schema":"digest_output.schema.json"}

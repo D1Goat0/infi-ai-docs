@@ -1,0 +1,13 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "INFI AI Digest Output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["sources_count", "highlights", "stale_source_warning", "next_actions"],
+  "properties": {
+    "sources_count": {"type": "integer", "minimum": 0},
+    "highlights": {"type": "array", "items": {"type": "string"}},
+    "stale_source_warning": {"type": "boolean"},
+    "next_actions": {"type": "array", "items": {"type": "string"}}
+  }
+}

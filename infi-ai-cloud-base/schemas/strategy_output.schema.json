@@ -1,0 +1,13 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "INFI AI Strategy Output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["assumptions", "risks", "decision_points", "next_actions"],
+  "properties": {
+    "assumptions": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+    "risks": {"type": "array", "items": {"type": "string"}},
+    "decision_points": {"type": "array", "items": {"type": "string"}},
+    "next_actions": {"type": "array", "items": {"type": "string"}, "minItems": 1}
+  }
+}
