@@ -110,5 +110,28 @@
 3. Define RF profile manifest fields + signing workflow.
 4. Build roadmap board with milestone owners and exit criteria.
 
+## 7) 00:35-00:55 Milestone Output
+
+### New docs created
+- `docs/INFI-AI-CLOUD-MODEL-BASE-PLAN.md`
+- `docs/INFI-AI-FIRMWARE-RF-EXPANSION-PLAN.md`
+- `docs/INFI-AI-EXECUTABLE-ROADMAP-QUALITY.md`
+
+### Key net-new decisions
+- Cloud model base now defined as tiered router (`R/F/S/O`) with fail-closed policy and hard cost governance.
+- RF expansion is now repo-linked with explicit work packages for `pamir-infiltra`, `neon-flash-esp`, and corpus normalization in `D1HackGear0`.
+- Device expansion locked behind descriptor-first promotion gates to prevent support matrix sprawl.
+- Roadmap quality now scored with a rubric and execution-unit format for hourly delivery discipline.
+
+### Newly surfaced risks
+1. D1HackGear repo ambiguity (near-empty) may cause planning drift.
+2. Mixed provenance in D1HackGear0 RF corpus requires strict compliance filtering.
+3. Cloud cost spikes remain likely until request tagging is enforced everywhere.
+
+### Next-hour execution plan
+1. Draft board descriptor JSON examples + policy bundle skeleton in docs.
+2. Create a reason-code matrix bridging preflash UI and firmware runtime checks.
+3. Produce a first-pass issue breakdown (EU-IDs) by repo and sequencing.
+
 ---
 This document is intentionally execution-focused and structured for direct conversion into issues/epics in Infiltra repos.
