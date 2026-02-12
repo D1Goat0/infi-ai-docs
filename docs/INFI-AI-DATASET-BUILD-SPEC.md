@@ -1,10 +1,22 @@
 # INFI AI Dataset Build Specification
 
-_Last updated: 2026-02-12_
+_Last updated: 2026-02-12 (deep research pass)_
 
-Purpose: define exactly how INFI AI datasets are authored, validated, transformed, and packaged for embedded tiers and cloud services.
+This specification defines how INFI AI datasets are authored, validated, normalized, packaged, signed, released, and rolled back for Tiny/Medium/Heavy embedded tiers and cloud analytics.
 
-## 1) Directory Layout (canonical)
+---
+
+## 1) Scope and Design Principles
+
+1. **Determinism first:** dataset transforms must be reproducible.
+2. **Provenance always:** every actionable datum has source metadata.
+3. **Safety-linked:** intent/action records must enforce capability and safety contracts.
+4. **Tier-aware outputs:** tiny/medium/heavy packages are generated from one canonical source.
+5. **No secrets:** dataset repos contain zero tokens, credentials, or private keys.
+
+---
+
+## 2) Canonical Repository Layout
 
 ```text
 infi-ai-data/
@@ -15,6 +27,8 @@ infi-ai-data/
     intent_map.schema.json
     knowledge_cards.schema.json
     ir_catalog.schema.json
+    board_registry.schema.json
+    release_manifest.schema.json
   src/
     devices.json
     pinouts.json
@@ -22,6 +36,12 @@ infi-ai-data/
     intent_map.json
     knowledge_cards.json
     ir_catalog.json
+    board_registry.json
+  pipeline/
+    normalize/
+    validate/
+    package/
+    sign/
   build/
     normalized/
     tiered/
@@ -30,183 +50,114 @@ infi-ai-data/
       infi_kb_medium.binpack
       infi_kb_heavy.binpack
       manifest.json
+      manifest.sig
   reports/
     validation-report.json
+    semantic-report.json
     dedupe-report.json
     size-report.json
+    safety-report.json
 ```
 
 ---
 
-## 2) Dataset Schemas (minimum required fields)
+## 3) Required Data Objects and Core Fields
 
-## 2.1 `devices.json`
-```json
-{
-  "id": "m5stickc_plus2",
-  "name": "M5StickC Plus 2",
-  "vendor": "M5Stack",
-  "family": "M5Stick",
-  "mcu": "ESP32-S3",
-  "flash_mb": 8,
-  "ram_kb": 512,
-  "psram_mb": 0,
-  "wireless": ["wifi_2_4", "ble"],
-  "tier_support": ["medium"],
-  "status": "recommended",
-  "source": {"type": "vendor_doc", "ref": "...", "updated_at": "2026-02-12"}
-}
-```
+### 3.1 `devices.json`
+Required: `id`, `name`, `vendor`, `family`, `mcu`, `flash_mb`, `ram_kb`, `psram_mb`, `wireless[]`, `tier_support[]`, `status`, `source{}`.
 
-## 2.2 `pinouts.json`
-```json
-{
-  "device_id": "m5stickc_plus2",
-  "pin": "GPIO18",
-  "functions": ["SPI_SCK", "Display"],
-  "voltage": "3v3",
-  "reserved": true,
-  "conflicts": ["shared_with_sd"],
-  "notes": "Do not remap in default firmware profile"
-}
-```
+### 3.2 `pinouts.json`
+Required: `device_id`, `pin`, `functions[]`, `voltage`, `reserved`, `conflicts[]`, `notes`.
 
-## 2.3 `firmware_capabilities.json`
-```json
-{
-  "firmware": "infiltra",
-  "version": "0.0.0",
-  "board_id": "m5stickc_plus2",
-  "features": ["wifi_scan", "ble_scan", "ir_send"],
-  "constraints": ["cc1101_not_present"],
-  "source_commit": "<git-sha>"
-}
-```
+### 3.3 `firmware_capabilities.json`
+Required: `firmware`, `version`, `board_id`, `features[]`, `constraints[]`, `source_commit`, `generated_at`.
 
-## 2.4 `intent_map.json`
-```json
-{
-  "intent_id": "wifi.scan.start",
-  "aliases": ["scan wifi", "start wifi scan"],
-  "safety_class": "S1",
-  "required_capability": "wifi_scan",
-  "action": {"type": "firmware_command", "value": "WIFI_SCAN_START"},
-  "tier_support": ["tiny", "medium", "heavy"],
-  "confidence_threshold": {"tiny": 1.0, "medium": 0.9, "heavy": 0.85}
-}
-```
+### 3.4 `intent_map.json`
+Required: `intent_id`, `aliases[]`, `safety_class`, `required_capability`, `action{}`, `tier_support[]`, `confidence_threshold{}`.
 
-## 2.5 `knowledge_cards.json`
-```json
-{
-  "card_id": "card.m5stickc2.wifi.scan",
-  "topic": "workflow",
-  "question": "How do I run a Wi-Fi scan?",
-  "answer": "Open scan menu, select Wi-Fi scan, wait for list...",
-  "device_scope": ["m5stickc_plus2", "m5cardputer"],
-  "tier_support": ["tiny", "medium", "heavy"],
-  "confidence": 0.95,
-  "source": {"type": "internal_doc", "ref": "runbook-v1"}
-}
-```
+### 3.5 `knowledge_cards.json`
+Required: `card_id`, `topic`, `question`, `answer`, `device_scope[]`, `tier_support[]`, `confidence`, `source{}`.
 
-## 2.6 `ir_catalog.json`
-```json
-{
-  "category": "tv",
-  "vendor": "example",
-  "model": "x100",
-  "protocol": "NEC",
-  "code_ref": "irdb://...",
-  "source": {"type": "ir_dataset", "ref": "..."}
-}
-```
+### 3.6 `ir_catalog.json`
+Required: `category`, `vendor`, `model`, `protocol`, `code_ref`, `source{}`.
+
+### 3.7 `board_registry.json` (new mandatory object)
+Required: `board_id`, `mcu_family`, `tier_default`, `tier_max`, `feature_flags[]`, `memory_budget{}`, `ota_channel`, `status`.
 
 ---
 
-## 3) Ingestion Specification
+## 4) Validation Taxonomy (Hard-Fail vs Soft-Fail)
 
-## 3.1 Allowed source classes
-- vendor datasheets/docs
-- firmware repo metadata
-- board definitions
-- curated internal runbooks
-- vetted community submissions (reviewed)
+### 4.1 Hard-fail checks (build blocking)
+- JSON schema violation in any required source.
+- Duplicate `intent_id` or missing `intent_id`.
+- `intent_map.required_capability` not present in board capability definitions.
+- Action references unknown firmware command surface.
+- Missing provenance in records used by routing/knowledge outputs.
+- Package size exceeds tier budget.
+- Signature/manifest generation failure.
 
-## 3.2 Ingestion stages
-1. **Collect:** fetch candidate records into raw staging.
-2. **Parse:** convert to canonical JSON shape.
-3. **Validate:** schema + semantic constraints.
-4. **Normalize:** names, units, identifiers, enums.
-5. **Deduplicate:** merge same-entity records by confidence/provenance policy.
-6. **Publish:** write normalized outputs and build artifacts.
-
----
-
-## 4) Validation Rules (hard fail vs soft fail)
-
-## 4.1 Hard fail (must block build)
-- schema violation in any required dataset
-- missing `intent_id` or duplicate `intent_id`
-- intent mapped to unknown capability
-- action map references unsupported command
-- required provenance missing
-
-## 4.2 Soft fail (warn + report)
-- stale source timestamps
-- low-confidence cards (< configured threshold)
-- optional metadata missing
+### 4.2 Soft-fail checks (warn + report)
+- Source staleness threshold exceeded.
+- Confidence below configurable threshold on non-critical cards.
+- Missing optional UX metadata.
 
 ---
 
-## 5) Deduplication and Confidence Policy
+## 5) Semantic Integrity Rules
 
-## 5.1 Entity keys
-- device key: `vendor + family + name + mcu`
-- pin key: `device_id + pin`
-- intent key: `intent_id`
-- card key: `card_id` (or normalized question hash fallback)
-
-## 5.2 Conflict resolution
-1. Internal validated source beats external unverified source.
-2. Newer timestamp beats older if confidence equal.
-3. If conflicting high-confidence records remain, mark `needs_review=true` and block publication for affected entity.
+1. Every `intent_id` must map to one action contract and one safety class.
+2. Every action contract must map to known command groups in target firmware version.
+3. Every board in recommended set must have complete `board_registry` entry.
+4. Every recommended board must have package compatibility tuple coverage.
+5. `tier_support` must be monotonic by capability (Tiny subset of Medium subset of Heavy unless explicitly exempted).
 
 ---
 
-## 6) Tier Packaging Rules
+## 6) Deduplication and Confidence Arbitration
 
-## 6.1 Pruning strategy
-- Tiny: highest-frequency intents/cards only, strict whitelist.
-- Medium: add aliases and expanded cards.
-- Heavy: include troubleshooting and deeper references.
+### 6.1 Entity keys
+- Device key: `vendor + family + name + mcu`
+- Pin key: `device_id + pin`
+- Intent key: `intent_id`
+- Card key: `card_id` (or normalized `question_hash` fallback)
 
-## 6.2 Packaging contract
+### 6.2 Conflict resolver order
+1. Internal validated sources > external unverified sources.
+2. Higher confidence > lower confidence.
+3. Newer timestamp > older timestamp when confidence ties.
+4. If unresolved high-confidence conflict remains -> `needs_review=true` and block publication for affected record.
+
+---
+
+## 7) Tier Packaging Rules
+
+| Rule Area | Tiny | Medium | Heavy |
+|---|---:|---:|---:|
+| Intent alias count | minimal | moderate | expanded |
+| Card depth | procedural only | + troubleshooting | + deep troubleshooting graph |
+| Max package target | strict | moderate | larger (bounded) |
+| Response templates | short | medium | extended (still deterministic) |
+
+### 7.1 Packaging contract
 Each package must include:
 - header/version block
-- record index
-- compressed payload segments
-- checksum
-- compatibility tuple
+- sorted record index
+- compressed payload sections
+- SHA256 checksum
+- compatibility tuple (`firmware`, `schema`, `intent_schema`)
 
-## 6.3 Manifest example
-```json
-{
-  "build_id": "2026-02-12T00:00:00Z",
-  "schema_version": "1.0.0",
-  "intent_schema_version": "1.0.0",
-  "firmware_compat": ["0.9.x", "0.10.x"],
-  "artifacts": [
-    {"name": "infi_kb_tiny.binpack", "sha256": "...", "size": 184320},
-    {"name": "infi_kb_medium.binpack", "sha256": "...", "size": 512000},
-    {"name": "infi_kb_heavy.binpack", "sha256": "...", "size": 1310720}
-  ]
-}
-```
+### 7.2 Manifest minimum
+- `build_id`
+- `schema_version`
+- `intent_schema_version`
+- `firmware_compat[]`
+- artifacts list with `sha256`, `size`, `tier`
+- `signature_algo`
 
 ---
 
-## 7) CI/CD Build Pipeline (required jobs)
+## 8) CI/CD Pipeline (Required Jobs)
 
 1. `lint-json`
 2. `schema-validate`
@@ -215,44 +166,106 @@ Each package must include:
 5. `tier-prune`
 6. `package-binpack`
 7. `manifest-sign`
-8. `publish-artifacts`
+8. `compatibility-check`
+9. `publish-artifacts`
 
-Build fails if any hard-fail rule trips.
-
----
-
-## 8) Security and Data Hygiene
-
-- Never store API keys or secrets in dataset repo.
-- Strip PII from community-derived records.
-- Keep source provenance but redact private links if required.
-- Sign released manifest and verify on device prior to load.
+**Branch policy:** release tags only from fully green pipeline with signed manifest.
 
 ---
 
-## 9) Acceptance Criteria
+## 9) Firmware Integration Contract (Infiltra Workflow)
 
-A dataset release is valid when:
-1. All schemas pass.
-2. Semantic checks pass with zero hard failures.
-3. Package sizes are within tier budgets.
-4. Manifest verifies and compatibility tuple matches target firmware.
-5. Smoke tests on recommended boards pass with published artifacts.
+For `repos/pamir-infiltra` integration:
+- board env names and `Boards/*.json` remain the capability anchor.
+- generated packages are consumed by firmware build/release process.
+- runtime must validate compatibility tuple before mounting package.
+- if mismatch occurs, fail closed and present concise remediation.
 
----
-
-## 10) Tomorrow-Morning Data Actions
-
-1. Create schema files with required fields from this spec.
-2. Seed first normalized datasets for top 3 recommended boards.
-3. Implement duplicate detection and hard-fail validator logic.
-4. Generate first tiny package and test on M5StickC Plus 2.
-5. Add CI job sequence and publish validation report artifacts.
+### 9.1 Required runtime behaviors
+- verify `manifest.sig` and SHA256 before load.
+- reject unsupported tier package for board tier max.
+- log machine-readable reason codes (`ERR_SIG`, `ERR_COMPAT`, `ERR_SIZE`, `ERR_SCHEMA`).
 
 ---
 
-## 11) Cross-links
+## 10) Security and Privacy Controls
+
+- Never commit secrets to dataset sources.
+- Strip/avoid PII from community submissions.
+- Keep provenance references but redact private URLs when needed.
+- Sign release manifests with offline-managed keys.
+- Maintain immutable release logs for audit.
+
+---
+
+## 11) Quality Gates and Release Acceptance
+
+A dataset release is valid only if all are true:
+1. Schemas pass with zero hard-fail.
+2. Semantic integrity checks pass.
+3. Tier package size budgets are respected.
+4. Manifest signature and checksums verify.
+5. HIL smoke tests pass on all recommended boards using newly generated artifacts.
+6. Safety report confirms no orphan intents or unmapped actions.
+
+---
+
+## 12) Dataset Build Metrics to Track
+
+- validation pass rate
+- semantic conflict count
+- dedupe merge ratio
+- package size trend by tier
+- stale-source ratio
+- rollback frequency by artifact version
+
+---
+
+## 13) Monetization Linkage
+
+| Data Capability | Product Outcome | Commercial Effect |
+|---|---|---|
+| Cleaner intent map | fewer failures | higher Pro retention |
+| Better board registry | clearer compatibility promises | lower support cost |
+| Faster packaging cadence | quicker fixes/new workflows | stronger upgrade conversion |
+| Signed reproducible releases | trust for teams/OEM | premium plan credibility |
+
+---
+
+## 14) Immediate Implementation Checklist
+
+- [ ] Add `board_registry` schema and canonical source file.
+- [ ] Implement semantic validator for capability/action contracts.
+- [ ] Add signature verification integration test.
+- [ ] Define package budget thresholds per tier and enforce in CI.
+- [ ] Publish machine-readable reason codes for runtime load failures.
+- [ ] Create release report template including safety, size, and compatibility status.
+
+---
+
+## 15) Cloud Model-Base Evaluation Dataset Extensions
+
+To reduce planning-quality drift, maintain a cloud evaluation pack alongside embedded artifacts.
+
+### 15.1 Optional cloud evaluation objects
+- `cloud_prompt_registry.json` (prompt_id, task_class, schema_contract, version_hash)
+- `cloud_eval_set.json` (scenario_id, inputs, expected_schema, scoring_rubric)
+- `cloud_eval_runs.json` (run_id, model_class, pass_fail, drift_flags, timestamp)
+
+### 15.2 Publication checks for cloud pack
+- prompt registry references only approved task classes (`strategy`, `triage`, `digest`)
+- eval set covers at least one scenario per board family and risk tier
+- schema conformance rate meets release threshold (default >=95%)
+- severe drift flags block promotion until reviewed
+
+### 15.3 Value
+This keeps cloud recommendations auditable and prevents silent degradation in roadmap and triage output quality.
+
+---
+
+## 16) Cross-links
 
 - Master guide: `docs/INFI-AI-MASTER-IMPLEMENTATION-GUIDE.md`
-- Hardware strategy: `docs/INFI-AI-HARDWARE-COMPATIBILITY-DEEP-DIVE.md`
+- Hardware fit: `docs/INFI-AI-HARDWARE-COMPATIBILITY-DEEP-DIVE.md`
 - Operating rhythm: `docs/INFI-AI-ROADMAP-AND-OPERATING-RHYTHM.md`
+- Integration baseline: `INFI_AI_INTEGRATION_NOTES.md`

@@ -1,86 +1,158 @@
-# INFI AI Master Implementation Guide (Single Source of Truth)
+# INFI AI Master Implementation Guide (Execution Canon)
 
-_Last updated: 2026-02-12_
+_Last updated: 2026-02-12 (deep research pass)_
 
-This is the execution-grade master guide for building and launching INFI AI with a small startup team.
+**Purpose:** single execution document to ship INFI AI across constrained embedded targets and cloud operations without fragmentation.
 
-## 0) Scope and Outcomes
-
-INFI AI is delivered as two tightly-coupled products:
-- **Embedded runtime** on supported boards (deterministic intent -> action + local knowledge retrieval)
-- **Cloud runtime** for ingestion, analytics, roadmap scoring, and support/monetization workflows
-
-### v1 outcomes (12 weeks)
-1. Production-grade embedded runtime for a constrained recommended board set.
-2. Versioned dataset pipeline generating tiered KB packages.
-3. Daily cloud digest + board compatibility/risk reporting.
-4. Commercially usable plan packaging (Free/Pro/Team) with telemetry-backed metrics.
+**Canonical companion docs:**
+- Hardware: `docs/INFI-AI-HARDWARE-COMPATIBILITY-DEEP-DIVE.md`
+- Dataset system: `docs/INFI-AI-DATASET-BUILD-SPEC.md`
+- Roadmap + cadence: `docs/INFI-AI-ROADMAP-AND-OPERATING-RHYTHM.md`
 
 ---
 
-## 1) North-Star Architecture
+## 1) Product Definition and Boundaries
 
-## 1.1 Layered System
+INFI AI is a deterministic assistant architecture, not a freeform on-device LLM. It has two tightly coupled planes:
 
-1. **Input + Intent Layer (device)**
-   - Button events, short text, optional voice keyword triggers
-   - Tiered intent engine (Tiny/Medium/Heavy)
-2. **Local Knowledge Layer (device)**
-   - Tier-pruned compact KB (`.binpack`) with deterministic card templates
-3. **Action Router + Safety Layer (device)**
-   - Explicit map only (`intent_id -> command/action`) + safety class checks
-4. **Cloud Intelligence Layer**
-   - Ingest repos/docs/issues/community signals
-   - Generate daily engineering digest + roadmap recommendations
-5. **Ops + Commercial Layer**
-   - Release channels, telemetry, plan gates, support workflows
+1. **Embedded plane (real-time):** intent parsing, local retrieval, action routing, safety confirmation.
+2. **Cloud plane (ops intelligence):** ingest repos/community/telemetry, rank opportunities, produce roadmap + release intelligence.
 
-## 1.2 Non-Negotiables
-- No silent execution for unmapped/low-confidence actions.
-- Firmware/KB/schema compatibility contract enforced at runtime.
-- Secrets excluded from logs/docs/manifests.
-- Recommended boards are tightly scoped; broad matrix deferred.
+### Non-negotiables
+- No unmapped action execution under any confidence condition.
+- No background “auto execute” path for S2/S3 actions.
+- Firmware↔dataset compatibility tuple enforced before KB load.
+- Recommended-board scope remains intentionally small during v1.
 
 ---
 
-## 2) Tier Model and Budgets
+## 2) Tier Model (Tiny / Medium / Heavy)
 
-Use conservative guardrails in firmware; tune after profiling.
+| Tier | Typical Compute Class | Parser Mode | Local KB Design | Latency Budget (P95) | Classification Gate |
+|---|---|---|---|---:|---|
+| Tiny | ESP32-C3 / classic ESP32 / low-headroom STM32 | strict keyword exact-match | compact procedural cards | <=250 ms | 7-day soak + 98% safe routing |
+| Medium | ESP32-S3 (no/low PSRAM), STM32F4/L4/H5 subsets | keyword + curated aliases | deeper cards + board deltas | <=320 ms | 14-day soak + 98.5% routing |
+| Heavy | ESP32-S3+PSRAM / STM32H7/H5 premium targets / ESP32-P4+coprocessor | alias+context slots+workflow sequencing | troubleshooting graph + recovery recipes | <=450 ms | 21-day soak + 99% routing |
 
-| Tier | Primary Hardware Fit | Intent Model | KB Size Target (compressed) | Response Budget | Typical Latency Target |
-|---|---|---|---:|---:|---:|
-| Tiny | ESP32-C3 / older ESP32 | exact keyword map | 128-256 KB | <= 160 chars | <250 ms |
-| Medium | ESP32-S3 (no/low PSRAM) | keyword + alias | 256-768 KB | <= 280 chars | <300 ms |
-| Heavy | ESP32-S3 + PSRAM / high-end STM pilot | alias + troubleshooting context + optional keyword voice trigger | 0.8-2.0 MB | <= 420 chars | <400 ms |
-
-> Heavy is still deterministic retrieval/routing, not on-device full LLM inference.
+**Promotion rule:** no tier promotion without passing the objective promotion gates in §11.
 
 ---
 
-## 3) Hardware Strategy (Execution Decision)
+## 3) Current v1 Board Policy
 
-### 3.1 v1 Recommended
-1. **M5StickC Plus 2 (ESP32-S3)** - Medium default
-2. **M5Cardputer (ESP32-S3)** - Medium/Heavy
-3. **LilyGO T-Embed (ESP32-S3)** - Medium/Heavy
+### Recommended (ship-confidence)
+1. M5StickC Plus 2 (ESP32-S3)
+2. M5Cardputer (ESP32-S3)
+3. LilyGO T-Embed (ESP32-S3)
 
-### 3.2 Beta Lane
-- M5StickC Plus 1.1 (ESP32 classic)
-- LilyGO T-Embed CC1101 variants (RF complexity)
-- STM32 pilot board (NUCLEO-F446RE preferred)
+### Beta lane (controlled)
+- M5StickC Plus 1.1 (classic ESP32)
+- LilyGO T-Embed CC1101 variants
+- NUCLEO-F446RE (STM32F4 portability pilot)
 
-### 3.3 Not Recommended for v1 Distribution
-- Generic ESP32 devkits (high variance/support drag)
-- Broad ESP32-S2/C6 fleet support in first release
-- Legacy STM32F1 broad support
-
-See deep technical rationale in: `docs/INFI-AI-HARDWARE-COMPATIBILITY-DEEP-DIVE.md`.
+### Not-recommended (v1 distribution)
+- Generic ESP32 devkits (high BOM variance)
+- Broad ESP32-S2/C6/H2 rollouts
+- Broad STM32 family promises before parity harness matures
 
 ---
 
-## 4) Data System and Dataset Contracts
+## 4) Integration Strategy with Existing Infiltra Repos
 
-Canonical datasets:
+This plan is tailored to existing structure in `repos/pamir-infiltra`:
+- `platformio.ini` envs: `m5stick-c-plus-2`, `m5stick-c-plus-1-1`, `cardputer`, `lilygo-t-embed`, `lilygo-cc1101`
+- board manifests: `Boards/*.json`
+- firmware modules: `src/Modules/Functions/*`, `src/Modules/Core/*`, `src/UserInterface/*`
+
+### 4.1 New module layout (minimal refactor)
+
+```text
+src/Modules/AI/
+  Intent/
+  Knowledge/
+  Router/
+  Safety/
+  Telemetry/
+  Config/
+```
+
+### 4.2 Runtime hook points
+1. Input capture in existing button/text flow (`Modules/Core/User Input/*`)
+2. Intent request normalization
+3. Tiered parser dispatch
+4. Capability gate check against board profile
+5. Safety gate (S0/S1/S2/S3)
+6. Action routing to existing firmware command handlers
+7. Deterministic response + optional telemetry event
+
+### 4.3 Compile-time controls
+- `INFI_AI_ENABLED`
+- `INFI_AI_TIER={tiny|medium|heavy}`
+- `INFI_AI_VOICE_KEYWORD_ENABLED` (heavy only)
+- `INFI_AI_CLOUD_HANDOFF_ENABLED` (optional)
+
+---
+
+## 5) Safety Model (Execution and Product)
+
+### Safety classes
+- **S0 Informational:** read-only lookup
+- **S1 Low impact:** reversible low-risk actions
+- **S2 Medium impact:** persistent state changes
+- **S3 High impact:** disruptive actions (must require confirmation UX where available)
+
+### Runtime hard-stops
+- Unknown intent ID -> reject + suggest nearest known safe intent.
+- Known intent but missing capability -> block + explain unsupported board capability.
+- Confidence below threshold -> no action execution.
+- Schema mismatch -> refuse KB load and display remediation tuple.
+
+### Abuse resistance
+- Community requests classified: `valid`, `unclear`, `irrelevant`, `troll`.
+- `troll` and low-confidence `unclear` never auto-promote to roadmap.
+- Preserve moderation provenance for audit.
+
+---
+
+## 6) OTA and Release Strategy
+
+### 6.1 Dual-track updates
+1. **Firmware OTA:** signed image, staged rollout channels (dev -> beta -> prod).
+2. **KB OTA:** signed manifest + checksum-verified `.binpack` artifacts.
+
+### 6.2 Compatibility tuple
+`firmware_semver + kb_manifest_semver + intent_schema_semver`
+
+### 6.3 Rollback rules
+- Firmware rollback if P95 latency regresses >25% for 2 consecutive release candidates.
+- KB rollback if action-map mismatch >0 or parsing fallback spike >2x baseline.
+- OTA abort if signature, checksum, or compatibility tuple fails.
+
+---
+
+## 7) Security Controls (Device + Pipeline + Cloud)
+
+### Device/runtime
+- Enforce signed firmware in release channels.
+- Manifest signature and SHA256 verification before loading KB.
+- Secrets redaction in serial logs and telemetry exports.
+
+### CI/CD pipeline
+- Schema validation hard-fail.
+- Semantic validation hard-fail (unknown capability, duplicate intent, orphan action).
+- Size budget hard-fail by tier.
+- SBOM + dependency scan on release branch.
+
+### Cloud controls
+- Principle-of-least-privilege keys for ingest bots.
+- API token rotation policy (30-90 days depending on risk class).
+- Structured audit logs: who changed what, when, and why.
+
+---
+
+## 8) Dataset/Knowledge Contract (Operational Summary)
+
+Canonical data objects:
 - `devices.json`
 - `pinouts.json`
 - `firmware_capabilities.json`
@@ -88,169 +160,134 @@ Canonical datasets:
 - `knowledge_cards.json`
 - `ir_catalog.json`
 
-## 4.1 Required Data Properties
-- Versioned and schema-validated.
-- Every card/action has provenance + confidence metadata.
-- Tier availability flags included (`tiny|medium|heavy`).
-
-## 4.2 Build Artifacts
+Generated artifacts:
 - `infi_kb_tiny.binpack`
 - `infi_kb_medium.binpack`
 - `infi_kb_heavy.binpack`
-- `manifest.json` with checksums and compatibility tuple
+- `manifest.json` + signature
 
-Detailed spec: `docs/INFI-AI-DATASET-BUILD-SPEC.md`.
-
----
-
-## 5) Firmware Integration Blueprint
-
-## 5.1 Module boundaries
-- `Modules/AI/Intent/*`
-- `Modules/AI/Knowledge/*`
-- `Modules/AI/Router/*`
-- `Modules/AI/Config/*`
-
-## 5.2 Runtime flow
-`input -> IntentRequest -> confidence gate -> KB lookup (if needed) -> action route -> response`
-
-## 5.3 Safety classes
-- **S0 Info:** read/lookup only
-- **S1 Low:** reversible low-risk operations
-- **S2 Medium:** state-changing operations
-- **S3 High:** potentially disruptive actions; require explicit confirm when UX allows
-
-## 5.4 Compatibility tuple
-`firmware_version + kb_manifest_version + intent_schema_version`
-
-On mismatch: refuse load, show concise remediation guidance.
+See full implementation detail in `docs/INFI-AI-DATASET-BUILD-SPEC.md`.
 
 ---
 
-## 6) Cloud Platform Implementation (Lean)
+## 9) Testing and Validation Framework
 
-## 6.1 Minimal useful cloud on day 1
-- Repo metadata ingest
-- Board/capability drift detection
-- Daily "what changed" digest
-- Suggestion triage board with impact/effort scoring
+### 9.1 Required test layers
+1. **Unit:** parser tokens, alias resolution, safety-state transitions.
+2. **Integration:** board capability map + action routing + KB load.
+3. **HIL smoke:** all recommended boards per RC.
+4. **Stress:** 30-minute mixed UI/input/AI loops.
+5. **Security:** signature verification and tamper tests.
 
-## 6.2 Data stores
-- Git-backed canonical datasets/docs
-- Ops DB (SQLite -> Postgres as needed)
-- Optional vector index only after retrieval quality proof
-
-## 6.3 Daily outputs
-1. Build health + board compatibility report
-2. Changed command surfaces and action-map risk alerts
-3. Top ranked feature candidates with rationale
+### 9.2 Golden acceptance thresholds
+- Routing correctness: >=98% Tiny, >=98.5% Medium, >=99% Heavy pilot.
+- Unsafe execution incidents: 0 tolerated.
+- P95 response latency within budget table in §2.
+- Build reproducibility: clean CI builds across all recommended targets.
 
 ---
 
-## 7) Security, Abuse Resistance, and Release Control
+## 10) Monetization Tie-In (Build What Pays)
 
-## 7.1 Device/runtime security controls
-- Signed firmware only in release channels
-- Signed KB manifest and checksum verification
-- No plaintext secrets in firmware logs
-
-## 7.2 Pipeline controls
-- Schema validation hard-fail in CI
-- Intent/action map completeness checks
-- Tier size budget checks hard-fail build
-
-## 7.3 Abuse controls for community ingestion
-- Classify as `valid|unclear|irrelevant|troll`
-- Only `valid` and high-confidence `unclear` items reach product triage
-- Keep moderation provenance (who/when/why)
-
----
-
-## 8) Testing and Acceptance
-
-## 8.1 Test layers
-- Unit: parser, ranking, map resolution
-- Integration: board profile + routing + KB loading
-- HIL smoke: recommended boards each release
-- Regression: top 50 intents per tier
-
-## 8.2 Acceptance criteria (v1)
-- >=98% correct intent-to-action on validated prompts
-- 0 unmapped action execution in test suite
-- 100% recommended boards pass build + smoke + safety tests
-- Daily digest delivered 5/5 business days
-
----
-
-## 9) Rollout Plan (12-week, startup realistic)
-
-| Phase | Weeks | Primary Output | Exit Gate |
+| Capability | User Outcome | Plan Tier | Instrumentation Needed |
 |---|---|---|---|
-| P0 Scope Lock | 0-1 | tier budgets, schema freeze, intent taxonomy v1 | signoff + backlog created |
-| P1 Tiny Ship Path | 1-3 | tiny parser/router + tiny KB pipeline | top-20 intents stable |
-| P2 Medium/Heavy | 3-6 | alias parser, troubleshooting cards, heavy profile | stability + latency within guardrails |
-| P3 Cloud Ops | 6-10 | daily digest + scoring pipeline | team uses outputs in planning |
-| P4 Hardening Launch | 10-12 | release checklist + rollback + support docs | RC passes and launch approved |
+| Tiny deterministic assistant | reliable baseline usage | Free funnel | DAU, intent success rate |
+| Medium richer local troubleshooting | faster issue resolution | Pro anchor | time-to-resolution, feature adoption |
+| Team reports + board drift intelligence | operational confidence at scale | Team | active seats, report opens, retention |
+| Heavy workflow automation (gated) | premium productivity | Pro+/Team add-on | activation rate, upgrade conversion |
 
-Roadmap cadence and rituals: `docs/INFI-AI-ROADMAP-AND-OPERATING-RHYTHM.md`.
+**Business policy:** never paywall safety-critical fixes or compatibility remediations.
 
 ---
 
-## 10) Monetization Linkage (Build what sells)
+## 11) Objective Promotion Gates (Board + Tier)
 
-| Capability | User Value | Plan Fit | Required Telemetry |
+### Board promotion: Beta -> Recommended
+Must pass all:
+1. 100% reproducible clean builds for 10 consecutive CI runs.
+2. Routing score meets tier threshold for board-specific benchmark set.
+3. 0 unmapped action executions in regression.
+4. 30-minute soak with no lockup / watchdog reset.
+5. Thermal/power profile within board envelope.
+6. Support docs complete: known constraints, troubleshooting, rollback guide.
+
+### Tier promotion: Feature set upgrade
+- Tiny -> Medium requires memory headroom proof and alias false-positive rate <=1.5%.
+- Medium -> Heavy requires PSRAM/performance evidence and P95 latency within Heavy target.
+
+---
+
+## 12) 12-Week Implementation Sequence (Practical)
+
+| Phase | Weeks | Primary Output | Exit Criteria |
 |---|---|---|---|
-| Tiny deterministic assistant | reliable baseline utility | Free funnel | DAU per board, intent success |
-| Medium KB + troubleshooting | less friction, faster fixes | Pro core | feature usage, resolution time |
-| Team reporting/workspace | multi-device operations | Team | active seats, report exports |
-| Premium heavy workflows | high-end assistive workflows | Pro+/Team add-on | tier activation, retention delta |
-
-Commercial details and pricing hypotheses: `INFI_AI_REVENUE_PATHS.md`.
+| P0 Scope lock | 0-1 | board freeze, schema freeze, safety contracts | signed design baseline |
+| P1 Tiny ship path | 1-3 | deterministic parser/router + tiny package | top-20 intents stable |
+| P2 Medium/Heavy pilot | 3-6 | alias engine + troubleshooting graph + heavy pilot | metrics pass in bench+HIL |
+| P3 Cloud ops loop | 6-10 | ingest + digest + scoring + compatibility alerts | weekly roadmap decisions use outputs |
+| P4 Hardening+launch | 10-12 | release checklist, OTA drills, support playbooks | RC approved and rollback tested |
 
 ---
 
-## 11) Risk Register and Controls
+## 13) Immediate Action Checklist (Next 48h)
 
-| Risk | Impact | Early Signal | Control |
+- [ ] Freeze v1 recommended board list and publish in all INFI docs.
+- [ ] Finalize tier budgets and parser thresholds in config headers.
+- [ ] Add AI module scaffolding in firmware repo (no broad refactor).
+- [ ] Implement semantic validation for intent↔capability↔action map.
+- [ ] Add CI gates for size budgets, signature checks, and regression tests.
+- [ ] Stand up dev/beta/prod OTA channels with rollback rehearsal.
+- [ ] Instrument metrics needed for Pro/Team monetization decisions.
+
+---
+
+## 14) Cloud Model Base Plan (Ops + Serving)
+
+### 14.1 Base model policy by function
+| Function | Primary Model Class | Fallback | Why |
 |---|---|---|---|
-| Board sprawl | missed deadlines | backlog full of board-specific defects | freeze recommended set |
-| Intent drift | unsafe/wrong actions | rising fallback + misroute rate | schema and map validation gates |
-| KB bloat | runtime instability | memory pressure regressions | hard size budgets per tier |
-| Noisy community input | roadmap churn | low accept rate from suggestions | triage classification + confidence gates |
-| Overbuilt cloud too early | burn without PMF | low usage of outputs | keep MVP digest first |
+| roadmap synthesis + risk framing | high-reasoning cloud LLM | medium-reasoning cloud LLM | strategic quality over latency |
+| compatibility triage + summarization | medium-reasoning cloud LLM | deterministic rules + templates | cost/stability balance |
+| daily digest rendering | low/medium cloud LLM | template-only formatter | predictable recurring output |
+| device-side execution | deterministic parser/router (no generative execution) | strict keyword parser | safety + reproducibility |
+
+### 14.2 Routing policy
+1. Route by task class (`strategy`, `triage`, `digest`, `device-runtime`).
+2. Enforce response schema for all cloud outputs consumed by planning tools.
+3. Reject non-conforming JSON and retry once with corrective prompt.
+4. Persist prompt/version hashes for reproducibility and regression testing.
+
+### 14.3 Model quality gates
+- Strategic plan outputs require explicit assumptions, risk table, and measurable next actions.
+- Triage outputs require severity, confidence, affected board family, and owner suggestion.
+- Digest outputs require source count + stale-source warning when applicable.
+- Weekly eval set should maintain <=5% schema rejection and >=90% reviewer actionability score.
 
 ---
 
-## 12) Team Operating Model (3-person startup)
+## 15) Device Coverage Strategy (v1 -> v2 expansion)
 
-- **Firmware lead:** parser/router/board compatibility and release safety
-- **Data/full-stack:** dataset pipeline + cloud ingest/reporting
-- **Product/ops (Luke):** prioritization, release gates, commercial experiments
+### v1 (ship now)
+- lock to three ESP32-S3 recommended boards
+- maintain one constrained beta lane (classic ESP32 + F446 pilot)
+- require objective gate pass before any public support claim changes
 
-Decision SLA:
-- architecture/safety decisions <=24h
-- backlog priority conflicts resolved in weekly planning
+### v1.5 (post-launch stabilization)
+- graduate one additional RF-capable S3 board if concurrency tests pass
+- add one low-cost Tiny profile (C3) with strict feature subset
+- begin STM32 security-focused lane (H5 or U5) only after parity harness maturity
 
----
-
-## 13) What to do tomorrow morning (explicit)
-
-1. Freeze v1 recommended board list (3 boards only).
-2. Approve tier budgets and response caps in this guide.
-3. Approve intent taxonomy for top 20 user tasks.
-4. Stand up dataset repo/folder structure using dataset build spec.
-5. Open tickets for P0/P1 milestones with owners and due dates.
-6. Add CI gates: schema validation, action-map completeness, KB size checks.
-7. Start daily 15-minute digest review ritual.
+### v2 (scale carefully)
+- broaden board matrix only where support cost per board remains within target
+- separate “community supported” from “commercially supported” labels
+- couple expansion decisions to telemetry-backed demand and margin impact
 
 ---
 
-## 14) Document map (single source index)
+## 16) Document Cross-Link Map
 
-- Master execution guide (this doc): `docs/INFI-AI-MASTER-IMPLEMENTATION-GUIDE.md`
-- Hardware deep dive: `docs/INFI-AI-HARDWARE-COMPATIBILITY-DEEP-DIVE.md`
-- Dataset build spec: `docs/INFI-AI-DATASET-BUILD-SPEC.md`
-- Roadmap + operating rhythm: `docs/INFI-AI-ROADMAP-AND-OPERATING-RHYTHM.md`
-- Legacy architecture baseline: `INFI_AI_ARCHITECTURE.md`
-- Integration details: `INFI_AI_INTEGRATION_NOTES.md`
+- Architecture baseline: `INFI_AI_ARCHITECTURE.md`
+- Device tier matrix: `INFI_AI_DEVICE_TIER_MATRIX.md`
+- Integration notes: `INFI_AI_INTEGRATION_NOTES.md`
+- Execution baseline: `INFI_AI_EXECUTION_PLAN.md`
 - Revenue model: `INFI_AI_REVENUE_PATHS.md`
