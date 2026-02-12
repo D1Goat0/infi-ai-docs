@@ -13,3 +13,10 @@ SOUL.md
 AGENTS.md
 BOOTSTRAP.md
 HEARTBEAT.md
+
+# Generated local DB artifacts
+infi-ai-cloud-base/data/*.db
+
+# Python cache
+**/__pycache__/
+*.pyc

@@ -1,37 +1,66 @@
-# INFI AI Cloud Base (v0)
+# INFI AI Cloud Base (v1)
 
-This folder is the **seed** for INFI AI cloud-plane discipline:
+Runnable v1 cloud-base package for INFI AI with:
 
-- **Task routing** by class (strategy / triage / digest)
-- **Schemas** for all machine-consumed outputs
-- **Eval harness** so model changes are measurable (not vibes)
-
-This is intentionally minimal and dependency-light so it can run on the Pi and in CI.
+- existing schema/eval utilities for cloud outputs
+- SQLite database for device + firmware records
+- migration/init + seed scripts
+- validation checks for schema/duplicates/integrity
+- basic query utilities via app entrypoint
 
 ## Layout
 
-- `schemas/` — JSON Schemas for cloud outputs
-- `eval/` — eval set (JSONL) + example golden outputs
-- `scripts/` — validation + scoring utilities
+- `src/infi_ai_cloud_base/` — DB layer + query utilities
+- `src/app.py` — app entrypoint for basic queries
+- `migrations/001_init.sql` — SQLite schema init migration
+- `data/` — seed datasets (devices, firmware releases, compatibility)
+- `scripts/init_db.py` — initialize DB schema
+- `scripts/seed_db.py` — seed/import initial dataset
+- `scripts/validate_db.py` — quality checks for DB
+- `schemas/`, `eval/`, `scripts/validate_outputs.py`, `scripts/validate_eval_set.py` — existing cloud output contracts + eval harness
 
-## Run
+## v1 data model
 
-Validate a JSONL file of model outputs:
+Tables:
+
+1. `devices`
+   - board metadata, tier, classification, notes
+2. `firmware_releases`
+   - firmware name/version/channel + intent + KB manifest versions
+3. `firmware_device_compatibility`
+   - mapping between devices and firmware, support level, bootloader bounds
+
+All tables include timestamps (`created_at`, `updated_at`) and uniqueness constraints.
+
+## Quick start
+
+From `infi-ai-cloud-base/`:
+
+```bash
+# 1) initialize schema
+python3 scripts/init_db.py
+
+# 2) seed initial records
+python3 scripts/seed_db.py
+
+# 3) run DB validation checks
+python3 scripts/validate_db.py
+
+# 4) query devices
+PYTHONPATH=src python3 src/app.py list-devices
+
+# 5) query firmware for one board
+PYTHONPATH=src python3 src/app.py firmware-for-device m5stickc-plus2
+```
+
+## Validate existing cloud output contracts
 
 ```bash
 python3 scripts/validate_outputs.py --schema-dir schemas --inputs eval/sample_outputs.jsonl
-```
-
-Validate the eval set shape:
-
-```bash
 python3 scripts/validate_eval_set.py --eval eval/weekly_eval_set.jsonl
 ```
 
-## Output contracts (minimum)
+## Notes
 
-- **Strategy**: `assumptions[]`, `risks[]`, `decision_points[]`, `next_actions[]`
-- **Triage**: `severity`, `confidence`, `affected_boards[]`, `owner`, `recommended_fix`
-- **Digest**: `sources_count`, `highlights[]`, `stale_source_warning`, `next_actions[]`
-
-These mirror the canon in `docs/INFI-AI-MASTER-IMPLEMENTATION-GUIDE.md`.
+- Seed records are sourced from the INFI hardware compatibility/matrix docs in this repo and converted into structured starter data for v1.
+- This v1 implementation is SQLite-first and dependency-light (stdlib only).

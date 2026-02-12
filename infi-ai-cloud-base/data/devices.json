@@ -1,0 +1,107 @@
+[
+  {
+    "slug": "m5stickc-plus2",
+    "name": "M5StickC Plus 2",
+    "manufacturer": "M5Stack",
+    "mcu_family": "ESP32-S3",
+    "board": "M5StickC Plus 2",
+    "tier": "Medium",
+    "classification": "Recommended",
+    "status_notes": "Balanced baseline for production assistant features.",
+    "metadata_json": {
+      "ram_mb": 8,
+      "flash_mb": 8,
+      "wireless": ["Wi-Fi", "BLE"]
+    }
+  },
+  {
+    "slug": "m5cardputer",
+    "name": "M5Cardputer",
+    "manufacturer": "M5Stack",
+    "mcu_family": "ESP32-S3",
+    "board": "M5Cardputer",
+    "tier": "Medium/Heavy",
+    "classification": "Recommended",
+    "status_notes": "Keyboard/display supports richer deterministic assistant workflows.",
+    "metadata_json": {
+      "ram_mb": 8,
+      "flash_mb": 8,
+      "wireless": ["Wi-Fi", "BLE"]
+    }
+  },
+  {
+    "slug": "lilygo-t-embed",
+    "name": "LilyGO T-Embed",
+    "manufacturer": "LilyGO",
+    "mcu_family": "ESP32-S3",
+    "board": "LilyGO T-Embed",
+    "tier": "Medium/Heavy",
+    "classification": "Recommended",
+    "status_notes": "Rich hardware support and 16MB-class variants for heavy experimentation.",
+    "metadata_json": {
+      "ram_mb": 8,
+      "flash_mb": 16,
+      "wireless": ["Wi-Fi", "BLE"]
+    }
+  },
+  {
+    "slug": "m5stickc-plus1-1",
+    "name": "M5StickC Plus 1.1",
+    "manufacturer": "M5Stack",
+    "mcu_family": "ESP32",
+    "board": "M5StickC Plus 1.1",
+    "tier": "Tiny/Medium",
+    "classification": "Beta",
+    "status_notes": "4MB-class constraints require tighter package limits.",
+    "metadata_json": {
+      "ram_mb": 4,
+      "flash_mb": 4,
+      "wireless": ["Wi-Fi", "BLE"]
+    }
+  },
+  {
+    "slug": "lilygo-t-embed-cc1101",
+    "name": "LilyGO T-Embed CC1101",
+    "manufacturer": "LilyGO",
+    "mcu_family": "ESP32-S3",
+    "board": "LilyGO T-Embed CC1101",
+    "tier": "Medium/Heavy",
+    "classification": "Beta",
+    "status_notes": "RF/audio/peripheral complexity requires dedicated regression lane.",
+    "metadata_json": {
+      "ram_mb": 8,
+      "flash_mb": 16,
+      "wireless": ["Wi-Fi", "BLE", "Sub-GHz"]
+    }
+  },
+  {
+    "slug": "nucleo-f446re",
+    "name": "NUCLEO-F446RE",
+    "manufacturer": "STMicroelectronics",
+    "mcu_family": "STM32F4",
+    "board": "NUCLEO-F446RE",
+    "tier": "Tiny/Medium",
+    "classification": "Beta pilot",
+    "status_notes": "First STM32 portability target for parser/router harness.",
+    "metadata_json": {
+      "ram_kb": 128,
+      "flash_kb": 512,
+      "wireless": []
+    }
+  },
+  {
+    "slug": "generic-esp32-devkit",
+    "name": "Generic ESP32 Devkit",
+    "manufacturer": "Multiple",
+    "mcu_family": "ESP32",
+    "board": "Generic ESP32 devkit",
+    "tier": "Tiny",
+    "classification": "Not Recommended",
+    "status_notes": "Hardware variance too high for startup support envelope.",
+    "metadata_json": {
+      "ram_mb": 4,
+      "flash_mb": 4,
+      "wireless": ["Wi-Fi", "BLE"]
+    }
+  }
+]

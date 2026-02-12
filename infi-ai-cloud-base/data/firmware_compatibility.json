@@ -1,0 +1,80 @@
+[
+  {
+    "firmware_name": "pamir-infiltra",
+    "firmware_version": "1.0.0",
+    "channel": "stable",
+    "device_slug": "m5stickc-plus2",
+    "support_level": "recommended",
+    "min_bootloader_version": "0.4.0",
+    "notes": "Primary stable board lane."
+  },
+  {
+    "firmware_name": "pamir-infiltra",
+    "firmware_version": "1.0.0",
+    "channel": "stable",
+    "device_slug": "m5cardputer",
+    "support_level": "recommended",
+    "min_bootloader_version": "0.4.0",
+    "notes": "Full medium workflow coverage."
+  },
+  {
+    "firmware_name": "pamir-infiltra",
+    "firmware_version": "1.0.0",
+    "channel": "stable",
+    "device_slug": "lilygo-t-embed",
+    "support_level": "recommended",
+    "min_bootloader_version": "0.4.0",
+    "notes": "Heavy workflows enabled with memory headroom."
+  },
+  {
+    "firmware_name": "pamir-infiltra",
+    "firmware_version": "1.1.0-beta.1",
+    "channel": "beta",
+    "device_slug": "m5stickc-plus2",
+    "support_level": "beta",
+    "min_bootloader_version": "0.4.0",
+    "notes": "Beta channel pre-release validation."
+  },
+  {
+    "firmware_name": "pamir-infiltra",
+    "firmware_version": "1.1.0-beta.1",
+    "channel": "beta",
+    "device_slug": "m5cardputer",
+    "support_level": "beta",
+    "min_bootloader_version": "0.4.0",
+    "notes": "Keyboard-focused UX improvements under test."
+  },
+  {
+    "firmware_name": "pamir-infiltra-rf",
+    "firmware_version": "0.9.0-beta.2",
+    "channel": "beta",
+    "device_slug": "lilygo-t-embed-cc1101",
+    "support_level": "experimental",
+    "min_bootloader_version": "0.5.0",
+    "notes": "RF-L2 lane; requires dedicated regression harness."
+  },
+  {
+    "firmware_name": "pamir-infiltra",
+    "firmware_version": "0.9.5",
+    "channel": "pilot",
+    "device_slug": "nucleo-f446re",
+    "support_level": "experimental",
+    "notes": "STM32 pilot portability run."
+  },
+  {
+    "firmware_name": "pamir-infiltra",
+    "firmware_version": "1.0.0",
+    "channel": "stable",
+    "device_slug": "m5stickc-plus1-1",
+    "support_level": "beta",
+    "notes": "Supported with constrained package limits."
+  },
+  {
+    "firmware_name": "pamir-infiltra",
+    "firmware_version": "1.0.0",
+    "channel": "stable",
+    "device_slug": "generic-esp32-devkit",
+    "support_level": "blocked",
+    "notes": "Not recommended due to board variance."
+  }
+]
