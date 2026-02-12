@@ -1,6 +1,6 @@
 # INFI AI Roadmap and Operating Rhythm
 
-_Last updated: 2026-02-12 (deep research pass)_
+_Last updated: 2026-02-12 (milestone: executable roadmap + overnight loop)_
 
 This document defines execution rhythm, milestone gates, and decision discipline for shipping INFI AI with a small team while preserving safety and hardware matrix integrity.
 
@@ -213,16 +213,35 @@ Use a consistent scoring rubric to keep planning decisions comparable week-to-we
 
 ---
 
-## 13) Immediate Actions (next 72h)
+## 13) Executable Next-72h Backlog (convert “ideas” into shippable tickets)
 
-- [ ] Hold scope-lock standup and freeze this week’s board/theme decisions.
-- [ ] Create visible gate checklist in sprint board.
-- [ ] Publish KPI dashboard for daily check-in.
-- [ ] Add release-train ownership and backup owners.
-- [ ] Run first OTA rollback rehearsal on one recommended board.
+These are written to be copy/pasted into a sprint board with minimal translation.
+
+### INFI-ROADMAP-001 — Cloud model routing policy + eval harness (v0)
+- **Outcome:** Cloud outputs are routable by task class and validated by schema; model changes become measurable.
+- **Scope:** task classifier labels; schema contracts; weekly eval set definition; quality gates in docs.
+- **Acceptance:** schemas defined; routing rules documented; eval checklist exists; <=5% schema rejection target set.
+- **Exit gate:** P3 readiness foundations.
+
+### INFI-ROADMAP-002 — Device coverage scoring worksheet + thresholds (v0)
+- **Outcome:** Board expansion decisions are numeric and auditable.
+- **Scope:** scoring dimensions; entry thresholds; labels (“recommended/beta/not-recommended”).
+- **Acceptance:** rubric published; at least 6 candidate boards scored once; decisions recorded.
+- **Exit gate:** P0/P1 scope lock discipline.
+
+### INFI-ROADMAP-003 — RF lane definition + regression harness requirements (v0)
+- **Outcome:** RF expansion stops being ad-hoc; promotion gates become objective.
+- **Scope:** RF-L1/L2/L3; concurrency test definition; latency regression capture; crash/reset checks.
+- **Acceptance:** lanes + gates documented; harness checklist written; owners/dependencies listed.
+- **Exit gate:** Hardware gate readiness for RF boards.
+
+### INFI-ROADMAP-004 — “Executable roadmap item” checklist enforced
+- **Outcome:** No roadmap item enters sprint without owner + acceptance + exit gate.
+- **Scope:** template adoption; review step added to weekly planning.
+- **Acceptance:** sprint template updated; first 10 roadmap items rewritten in this format.
+- **Exit gate:** Weekly planning maturity.
 
 ---
-
 
 ## 14) Overnight Execution Pattern (for all-night build blocks)
 
@@ -238,22 +257,26 @@ When running overnight milestone blocks, enforce this loop every 45-60 minutes:
 
 This keeps long runs from drifting into low-yield research and ensures morning handoff quality.
 
+---
+
 ## 15) Next 6-Hour Target Stack (current overnight cycle)
 
-### Block A (now -> +60m)
-- finalize cloud model-base routing policy and quality gates in canonical docs
-- define RF expansion lanes with promotion criteria
-- tighten device-coverage expansion policy (v1/v1.5/v2)
+### Block A (completed in this milestone window)
+- cloud model-base routing policy + quality gates added to master implementation guide
+- device coverage strategy formalized (scoring + thresholds)
+- RF expansion lanes/harness formalized and cross-linked
 
-### Block B (+60m -> +120m)
-- convert gates into checklist-friendly sprint items
-- map owners and dependencies for RF harness + compatibility work
-- produce concise decision log for morning review
+### Block B (next -> +60m)
+- convert cloud/device/RF gates into checklist-friendly sprint items with owners/dependencies
+- map “minimum RF harness” to concrete firmware test modules (where they live)
+- write a 1-page decision log for morning review (what is frozen vs open)
 
-### Block C (+120m -> +180m)
-- draft firmware integration task graph (module-by-module)
-- identify highest-risk unknowns requiring hardware validation
-- generate release-readiness rubric update
+### Block C (+60m -> +120m)
+- draft firmware integration task graph (module-by-module) for AI module scaffolding
+- identify highest-risk unknowns requiring hardware validation (power/bus contention)
+- tighten RC checklist language for OTA rollback rehearsal
+
+---
 
 ## 16) Cross-links
 

@@ -1,6 +1,6 @@
 # INFI AI Master Implementation Guide (Execution Canon)
 
-_Last updated: 2026-02-12 (deep research pass)_
+_Last updated: 2026-02-12 (milestone: cloud base plan + device coverage + RF lanes tightened)_
 
 **Purpose:** single execution document to ship INFI AI across constrained embedded targets and cloud operations without fragmentation.
 
@@ -243,7 +243,7 @@ Must pass all:
 
 ## 14) Cloud Model Base Plan (Ops + Serving)
 
-### 14.1 Base model policy by function
+### 14.1 Base model policy by function (abstract)
 | Function | Primary Model Class | Fallback | Why |
 |---|---|---|---|
 | roadmap synthesis + risk framing | high-reasoning cloud LLM | medium-reasoning cloud LLM | strategic quality over latency |
@@ -251,13 +251,26 @@ Must pass all:
 | daily digest rendering | low/medium cloud LLM | template-only formatter | predictable recurring output |
 | device-side execution | deterministic parser/router (no generative execution) | strict keyword parser | safety + reproducibility |
 
-### 14.2 Routing policy
+### 14.2 “Model base” selection criteria (concrete, testable)
+Choose the cloud base model(s) using an eval harness, not vibes:
+- **Schema adherence:** <=5% JSON/schema rejection across the weekly eval set.
+- **Actionability:** >=90% reviewer score (“could execute without follow-up”).
+- **Cost cap:** define a per-day and per-week ceiling for: (a) digest, (b) triage, (c) planning.
+- **Latency targets:** digest <=15s end-to-end; triage <=30s; planning can be slower.
+- **Stability:** no provider/model changes without a 2-run canary + regression diff.
+
+### 14.3 Routing policy
 1. Route by task class (`strategy`, `triage`, `digest`, `device-runtime`).
 2. Enforce response schema for all cloud outputs consumed by planning tools.
 3. Reject non-conforming JSON and retry once with corrective prompt.
 4. Persist prompt/version hashes for reproducibility and regression testing.
 
-### 14.3 Model quality gates
+### 14.4 Output schemas (minimum fields)
+- **Strategy output:** `assumptions[]`, `risks[]`, `decision_points[]`, `next_actions[]`.
+- **Triage output:** `severity`, `confidence`, `affected_boards[]`, `owner`, `recommended_fix`.
+- **Digest output:** `sources_count`, `highlights[]`, `stale_source_warning`, `next_actions[]`.
+
+### 14.5 Model quality gates
 - Strategic plan outputs require explicit assumptions, risk table, and measurable next actions.
 - Triage outputs require severity, confidence, affected board family, and owner suggestion.
 - Digest outputs require source count + stale-source warning when applicable.
@@ -282,24 +295,48 @@ To avoid “support sprawl”, every candidate board gets a numeric score and mu
 - **Beta entry:** >=70 and no single dimension <5.
 - **Recommended promotion eligibility:** >=80 and all objective promotion gates (§11) complete.
 
-### v1 (ship now)
+### 15.2 v1 / v1.5 / v2 policy
+**v1 (ship now)**
 - lock to three ESP32-S3 recommended boards
 - maintain one constrained beta lane (classic ESP32 + F446 pilot)
 - require objective gate pass before any public support claim changes
 
-### v1.5 (post-launch stabilization)
+**v1.5 (post-launch stabilization)**
 - graduate one additional RF-capable S3 board if concurrency tests pass
 - add one low-cost Tiny profile (C3) with strict feature subset
 - begin STM32 security-focused lane (H5 or U5) only after parity harness maturity
 
-### v2 (scale carefully)
+**v2 (scale carefully)**
 - broaden board matrix only where support cost per board remains within target
 - separate “community supported” from “commercially supported” labels
 - couple expansion decisions to telemetry-backed demand and margin impact
 
 ---
 
-## 16) Document Cross-Link Map
+## 16) Firmware RF Expansion (lane model + harness)
+
+Canonical deep details live in `docs/INFI-AI-HARDWARE-COMPATIBILITY-DEEP-DIVE.md#13-firmware-rf-expansion-strategy-phased-testable`.
+
+### 16.1 RF lanes (what “expanded RF” means)
+- **RF-L1 baseline:** BLE scan + Wi‑Fi recon metadata + safe summaries (low risk).
+- **RF-L2 extended:** sub‑GHz profile abstraction + controlled transmit guards (medium risk).
+- **RF-L3 advanced:** concurrent RF + UI workflow orchestration + recovery flows (high risk).
+
+### 16.2 Required RF harness (minimum viable)
+- **Concurrency test:** UI navigation + RF scan loop + user input bursts.
+- **Latency capture:** P95 latency regression vs non‑RF baseline per board.
+- **Crash/reset detection:** watchdog resets, brownout logs, heap fragmentation.
+- **Action mapping audit:** “0 unmapped RF actions” enforced in CI semantic checks.
+
+### 16.3 RF promotion gates (board-level)
+1. 10 clean RF regression runs with no crash/reset.
+2. <=10% P95 latency regression versus non‑RF baseline.
+3. 0 unmapped RF actions and 0 unsafe auto-execution incidents.
+4. Field telemetry stable across at least two board revisions.
+
+---
+
+## 17) Document Cross-Link Map
 
 - Architecture baseline: `INFI_AI_ARCHITECTURE.md`
 - Device tier matrix: `INFI_AI_DEVICE_TIER_MATRIX.md`
