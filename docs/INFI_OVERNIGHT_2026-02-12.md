@@ -158,3 +158,28 @@
 
 ---
 This document is intentionally execution-focused and structured for direct conversion into issues/epics in Infiltra repos.
+
+## 9) 08:22 Milestone Output (Morning Handoff)
+
+### Net-new refinements shipped
+- Pinned **canonical repo paths (proposal)** for:
+  - cloud policy + eval harness (`infi-ai-cloud-base/...`)
+  - firmware board descriptors + schema validation (`pamir-infiltra/...`)
+  - UI reason-code mirroring + preflash gates (`neon-flash-esp/...`)
+- Added a **measurable model-base selection procedure** (eval harness gates) to prevent “model vibes” decisions.
+- Made **key management** a first-class decision item (single key vs per-channel keys) to avoid shipping unsigned/ambiguous RF packs.
+
+### Files changed (docs)
+- `docs/INFI-AI-CLOUD-MODEL-BASE-PLAN.md`
+- `docs/INFI-AI-FIRMWARE-RF-EXPANSION-PLAN.md`
+- `docs/INFI_OVERNIGHT_2026-02-12.md`
+
+### Current blockers / decisions needed
+1. **Which repo becomes canonical for cloud runtime**: keep `infi-ai-cloud-base` as the home for `policy.yml` + eval harness, or move into a backend repo once named.
+2. **Exact descriptor path in `pamir-infiltra`**: confirm `Boards/descriptors/*.board.json` is acceptable vs folding into existing `Boards/*.json`.
+3. **Signing authority + rotation**: confirm key custody and whether per-channel keys are required.
+
+### Next 60-minute targets
+1. Create a minimal `ReasonCodes` single source list (doc/spec) that both firmware + UI can generate from.
+2. Draft `board_descriptor.schema.json` v0 outline (fields + required/optional) to unblock validation tooling.
+3. Draft `weekly_eval_set.jsonl` format + rubric checklist (what gets scored) so the harness is implementable.

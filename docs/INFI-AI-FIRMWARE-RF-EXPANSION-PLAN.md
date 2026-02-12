@@ -235,3 +235,41 @@ No device moves tiers unless it passes:
 3. **Support burden risk** if device expansion outruns conformance automation.
 
 Mitigation: descriptor-first gating, signed manifests, strict promotion criteria, metadata-first ingestion.
+
+---
+
+## 8) Canonical Repo Paths + Ownership (Proposal)
+
+The goal is to prevent “spec drift” by pinning one canonical path per artifact.
+
+### 8.1 `pamir-infiltra` (firmware)
+
+**Board descriptors (source of truth):**
+- `repos/pamir-infiltra/Boards/descriptors/*.board.json`
+
+**Validation + schema:**
+- `repos/pamir-infiltra/Tools/schemas/board_descriptor.schema.json`
+- `repos/pamir-infiltra/Tools/validate_board_descriptors.py` (or TS/Node equivalent)
+
+**RF profile pack handling:**
+- `repos/pamir-infiltra/src/Modules/RF/ProfilePacks/` (parser + verifier)
+- `repos/pamir-infiltra/src/Modules/RF/Policy/` (region-policy enforcement)
+
+**Reason codes list (single canonical header):**
+- `repos/pamir-infiltra/src/Modules/Core/ReasonCodes.h`
+
+### 8.2 `neon-flash-esp` (operator UI)
+
+**Reason codes mirror:**
+- `repos/neon-flash-esp/src/reasonCodes.ts` (generated from canonical list)
+
+**Preflash validator:**
+- `repos/neon-flash-esp/src/features/preflight/` (gating UI)
+
+### 8.3 Key management decision (must be explicit)
+
+Before any signed pack ships, decide one of:
+- **Single signing key** (fast, higher blast radius)
+- **Per-channel keys** (`alpha/field/stable`) (slower, safer)
+
+Minimum requirement: document signing authority + rotation policy + revocation workflow.

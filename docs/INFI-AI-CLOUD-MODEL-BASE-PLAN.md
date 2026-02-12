@@ -227,3 +227,31 @@ Notes:
 - Confidential leakage risk without robust preflight redaction.
 
 Mitigation: strict request schema validation + fail-closed defaults + trace-ledger always-on.
+
+---
+
+## 11) Canonical Repo Locations (Proposal)
+
+Until the dedicated backend repo is finalized, treat these as **binding conventions** so work doesn’t drift.
+
+- **Policy source of truth:** `infi-ai-cloud-base/policy/policy.yml`
+  - versioned + code-reviewed
+  - changes require a reason + approval (CODEOWNERS)
+- **Policy schema:** `infi-ai-cloud-base/policy/policy.schema.json`
+- **Eval harness:** `infi-ai-cloud-base/evals/`
+  - `weekly_eval_set.jsonl` (frozen prompts)
+  - `eval_runner.ts` (routes through model-router)
+  - `goldens/` (expected JSON schema + grading rubric)
+- **Trace ledger:** `infi-ai-cloud-base/trace/`
+  - `trace.schema.json`
+  - `reason_codes.md` (single list; referenced by firmware + UI)
+
+### 11.1 Model base selection procedure (measurable)
+
+A cloud model is eligible for a lane only if it passes:
+1. **Schema adherence:** <=5% invalid JSON on `weekly_eval_set.jsonl`.
+2. **Actionability:** >=90% reviewer score (could execute without follow-up).
+3. **Cost fit:** projected weekly spend within `budgets.dailyUsd`.
+4. **Stability:** no more than 1 provider incident/week causing failover for that lane.
+
+Ship rule: any model change must run the eval harness twice (two separate days) and attach diffs to the change request.
