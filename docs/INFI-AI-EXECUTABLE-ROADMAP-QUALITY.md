@@ -87,6 +87,24 @@ Default stance for INFI: **fail-closed** when uncertain.
 - Risk: schedule (thrash)
 - Unblock note: confirm ownership and desired repo role
 
+### EU-05: Policy YAML + reason-code alignment
+- Repo: docs first, then `pamir-infiltra` + `neon-flash-esp`
+- Owner: Cloud + Firmware + Frontend
+- Duration: 2h
+- DoD: `policy.yml` v0 shape documented + minimal schema + reason-code matrix for UI↔firmware published
+- Evidence: `docs/INFI-AI-CLOUD-MODEL-BASE-PLAN.md` (policy section) + `docs/INFI-AI-FIRMWARE-RF-EXPANSION-PLAN.md` (matrix section)
+- Risk: tech (drift), compliance (inconsistent gating)
+- Unblock note: none (doc-first)
+
+### EU-06: Device descriptor example set (Tier 0)
+- Repo: `pamir-infiltra`
+- Owner: Firmware
+- Duration: 2h
+- DoD: 3 canonical Tier-0 descriptor JSON examples + validation checklist
+- Evidence: descriptors checked into repo + linked from `docs/INFI-AI-FIRMWARE-RF-EXPANSION-PLAN.md`
+- Risk: schedule (time sink), support burden (premature breadth)
+- Unblock note: need decision on final descriptor location/path in repo
+
 ---
 
 ## 5) Next-Hour Operating Loop

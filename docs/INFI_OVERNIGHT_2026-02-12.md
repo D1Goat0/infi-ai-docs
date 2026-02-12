@@ -134,4 +134,27 @@
 3. Produce a first-pass issue breakdown (EU-IDs) by repo and sequencing.
 
 ---
+
+## 8) 04:35 Milestone Output
+
+### Net-new refinements shipped
+- Added a **`policy.yml` v0** shape (providers, budgets, routing rules, redaction, trace requirements) to the cloud model base spec.
+- Added a **UI↔firmware reason-code matrix** so `neon-flash-esp` and `pamir-infiltra` share identical gate semantics.
+- Added a **board descriptor JSON v0 skeleton** example to keep device coverage expansion descriptor-first.
+- Extended the Executable Roadmap Quality doc with **EU-05/EU-06** to make the next 1-2 hours unambiguous.
+
+### Files changed (docs)
+- `docs/INFI-AI-CLOUD-MODEL-BASE-PLAN.md`
+- `docs/INFI-AI-FIRMWARE-RF-EXPANSION-PLAN.md`
+- `docs/INFI-AI-EXECUTABLE-ROADMAP-QUALITY.md`
+
+### Current blockers / decisions needed
+1. **Signing authority + key management** for `*.infi-rfpack` signatures (single key vs per-channel keys).
+2. **Descriptor location** in `pamir-infiltra` (where canonical JSON lives + validation path).
+3. **Policy ownership**: who can change `policy.yml` and how it’s reviewed/versioned.
+
+### Next 60-minute target
+- Convert the new doc artifacts into a **minimal issue checklist** (EU-05 sub-tasks) and identify the single canonical repo location for `policy.yml` + device descriptors.
+
+---
 This document is intentionally execution-focused and structured for direct conversion into issues/epics in Infiltra repos.

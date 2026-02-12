@@ -71,6 +71,21 @@ Required reason-coded failures:
   - region policy status
 - Block flashing when gate fails; show remediation checklist.
 
+### D) Reason-code matrix (UI ↔ firmware)
+
+Goal: identical failure semantics across `neon-flash-esp` and `pamir-infiltra` so support and telemetry are consistent.
+
+| Gate | UI (preflash) behavior | Firmware runtime behavior | Reason code |
+|---|---|---|---|
+| Unknown device / VID/PID mismatch | Block; show supported list | Refuse to start flashing | `ERR_DEVICE_UNKNOWN` |
+| Unsupported board revision | Block; prompt to select correct profile | Boot into safe-mode; refuse RF/profile mount | `ERR_BOARD_REV` |
+| Missing policy bundle | Block; require policy download/select | Refuse RF activation; run non-RF lane only | `ERR_REGION_POLICY` |
+| Profile pack signature invalid | Block; require signed pack | Reject mount; emit telemetry | `ERR_PROFILE_SIG` |
+| Profile schema version unknown | Block; require updated tool | Reject parse; emit telemetry | `ERR_PROFILE_SCHEMA` |
+| RF frontend mismatch (e.g., CC1101 not present) | Warn+block (alpha override only) | Hard block profile load | `ERR_RF_FRONTEND` |
+
+Support note: UI should display the exact reason code + short remediation hint; firmware should log the same code in structured telemetry.
+
 ---
 
 ## 3) Descriptor-First Device Coverage Strategy (Execution)
@@ -86,6 +101,37 @@ Every board entry requires:
 - `flash_interface`, `recovery_mode`, `feature_flags[]`
 - `memory_budget{}` and `policy_bundle_id`
 - `board_revision` (or revision range) + vendor identity fields
+
+Example `board_descriptor.json` (v0 skeleton):
+
+```json
+{
+  "board_id": "m5stick-c-plus-2",
+  "vendor": "M5Stack",
+  "mcu_family": "ESP32-S3",
+  "rf_frontend": {
+    "wifi": true,
+    "ble": true,
+    "subghz": false,
+    "chip": "esp32-s3-integrated"
+  },
+  "tier_default": "Medium",
+  "tier_max": "Heavy",
+  "flash_interface": ["usb-cdc", "uart"],
+  "recovery_mode": ["uart-boot", "safe-mode"],
+  "feature_flags": ["display", "battery", "buttons"],
+  "memory_budget": {
+    "flash_mb_min": 8,
+    "psram": "optional"
+  },
+  "policy_bundle_id": "US-DEFAULT",
+  "board_revision": {
+    "kind": "range",
+    "min": "1.0",
+    "max": "2.x"
+  }
+}
+```
 
 ### Promotion gate (no exceptions)
 No device moves tiers unless it passes:

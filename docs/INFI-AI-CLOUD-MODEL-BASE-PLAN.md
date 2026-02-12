@@ -134,7 +134,71 @@ interface RoutedResponse {
 
 ---
 
-## 7) First Execution Backlog (48h)
+## 7) Policy YAML (v0) — single source of truth
+
+Goal: make routing/policy changes auditable and deployable without code edits.
+
+Example `policy.yml` (shape, not final):
+
+```yaml
+version: 0
+providers:
+  - id: openai
+    allowedModels:
+      reasoning: ["gpt-5-reasoning", "gpt-5.3-codex"]
+      fast: ["gpt-5-mini", "gpt-4.1-mini"]
+  - id: anthropic
+    allowedModels:
+      reasoning: ["claude-opus-4"]
+      fast: ["claude-sonnet-4"]
+
+budgets:
+  dailyUsd:
+    global: 25
+    byWorkstream:
+      firmware: 8
+      cloud: 10
+      ops: 7
+
+routing:
+  defaults:
+    failClosed:
+      riskClass: sensitive
+      dataClass: internal
+      lane: fast
+  rules:
+    - when:
+        taskType: plan
+        budgetClass: high
+      then:
+        lane: reasoning
+        requireTierSPreflight: true
+    - when:
+        riskClass: restricted-rf
+      then:
+        lane: reasoning
+        planOnly: true
+        requireTierSPreflight: true
+
+redaction:
+  enabled: true
+  patterns:
+    - kind: "api_key"
+    - kind: "jwt"
+    - kind: "ssh_private_key"
+
+trace:
+  logPayloadForConfidential: false
+  requiredFields: ["trace_id","tags","decisionReasons","provider","model","cost","latency"]
+```
+
+Notes:
+- `planOnly:true` is a hard constraint for `restricted-rf` (no procedural enablement).
+- All policy evaluation outcomes must emit reason codes; policy changes must be versioned.
+
+---
+
+## 8) First Execution Backlog (48h)
 
 1. Define `model-router` API + **policy YAML schema** (tags + allowlist + caps).
 2. Add provider adapter stubs (R/F/S lanes).
@@ -146,7 +210,7 @@ interface RoutedResponse {
 
 ---
 
-## 8) Metrics (Ship Gates)
+## 9) Metrics (Ship Gates)
 
 - Route decision trace coverage: **100%**
 - Budget cap violation: **0**
@@ -156,7 +220,7 @@ interface RoutedResponse {
 
 ---
 
-## 9) Known Risks
+## 10) Known Risks
 
 - Over-fragmented model stack increases maintenance overhead.
 - Cost spikes from unbounded reasoning calls if tags are missing.
