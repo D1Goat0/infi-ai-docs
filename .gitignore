@@ -1,0 +1,15 @@
+# Local Netlify folder
+.netlify
+
+# OpenClaw personal/workspace state
+memory/
+repos/
+
+# Local identity / operator notes (do not commit)
+USER.md
+TOOLS.md
+IDENTITY.md
+SOUL.md
+AGENTS.md
+BOOTSTRAP.md
+HEARTBEAT.md

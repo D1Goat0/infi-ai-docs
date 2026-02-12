@@ -1,103 +1,95 @@
-# INFI AI Device Tier Matrix (ESP32 + STM)
+> Canonical status (2026-02-12): This matrix remains a quick-reference summary. Deep rationale, family-level constraints (ESP32 S2/S3/C3/C6/H2/P4 + STM32 families), and objective promotion gates are defined in:
+> - `docs/INFI-AI-HARDWARE-COMPATIBILITY-DEEP-DIVE.md`
+> - `docs/INFI-AI-MASTER-IMPLEMENTATION-GUIDE.md`
 
-> Alignment note (2026-02-12): Expanded technical rationale is documented in `docs/INFI-AI-HARDWARE-COMPATIBILITY-DEEP-DIVE.md`.
+# INFI AI Device Tier Matrix (ESP32 + STM32)
 
-_Last updated: 2026-02-11_
+_Last updated: 2026-02-12 (deep research alignment)_
 
-## Classification Legend
-- **Recommended:** target for reliable production support in v1
-- **Beta-capable:** viable with caveats; test coverage needed before production claim
-- **Unsupported (for now):** not aligned with v1 constraints, missing needed resources/peripherals, or too costly to support now
+This matrix is the policy reference for classifying MCU/board support as **Recommended**, **Beta**, or **Not Recommended** for INFI AI.
 
-## Tier Definition (for planning)
-- **Tiny:** deterministic keyword intents, compact local KB, strict memory budgeting
-- **Medium:** alias/fuzzy matching, larger KB, expanded troubleshooting cards
-- **Heavy:** richest embedded feature set, broadest KB, optional voice keyword path + cloud handoff support
-
-> Note: “heavy” is still edge runtime logic + retrieval, not a full on-device LLM.
+Canonical deep detail: `docs/INFI-AI-HARDWARE-COMPATIBILITY-DEEP-DIVE.md`.
 
 ---
 
-## ESP32 Family Matrix
+## 1) Classification legend
 
-| MCU / Board Family | Typical Memory Profile | Suggested Tier | Classification | Why |
-|---|---:|---|---|---|
-| ESP32 (classic WROOM/WROVER) dev boards | ~520KB SRAM; flash varies | Tiny / Medium | **Beta-capable** | Large install base, but board variance and older silicon behavior can increase QA burden. |
-| ESP32-S2 boards | SRAM in similar class, single core | Tiny / Medium | **Unsupported (v1 default)** | Wi-Fi-only + single-core constraints; acceptable later for specific SKUs, not priority now. |
-| ESP32-C3 boards | lower memory and RISC-V single core | Tiny | **Beta-capable** | Great low-cost targets for strict command runtime, but tighter RAM budget and fewer UI-friendly boards. |
-| ESP32-C6 boards | constrained, newer ecosystem | Tiny | **Unsupported (v1 default)** | Good long-term (Wi-Fi 6/802.15.4), but ecosystem maturity for current firmware stack is lower. |
-| ESP32-S3 modules (no PSRAM) | strong baseline SRAM, dual core | Medium | **Recommended** | Best practical baseline for deterministic + richer parser while keeping power/cost reasonable. |
-| ESP32-S3 + PSRAM boards | strong embedded headroom | Medium / Heavy | **Recommended** | Best fit for heavy tier cards, troubleshooting index, and optional voice keyword features. |
+- **Recommended:** approved for production support in current release lane.
+- **Beta:** supported in controlled testing with explicit caveats and promotion gates.
+- **Not Recommended:** outside current support scope due to risk, cost, or capability mismatch.
 
 ---
 
-## Infiltra-Adjacent ESP32 Boards (Current Repo + Common Targets)
+## 2) Tier definitions
 
-| Board | MCU | Tier Fit | Classification | Notes |
+- **Tiny:** strict deterministic keyword intents + compact KB.
+- **Medium:** deterministic keyword + bounded alias expansion + expanded troubleshooting cards.
+- **Heavy:** richest embedded deterministic workflows, larger local KB, optional keyword voice path where hardware allows.
+
+---
+
+## 3) ESP32 family tier fit
+
+| Family | Typical fit | Status | Rationale |
+|---|---|---|---|
+| ESP32 classic | Tiny/Medium | Beta | broad install base but high board variance and tighter memory partitions on many SKUs |
+| ESP32-S2 | Tiny/Medium niche | Not Recommended (v1 default) | Wi-Fi-only and single-core limit current assumptions |
+| ESP32-S3 | Medium/Heavy | Recommended | best practical balance for UI + deterministic AI runtime + peripherals |
+| ESP32-C3 | Tiny | Beta | cost-efficient deterministic lane; lower headroom than S3 |
+| ESP32-C6 | Tiny future | Not Recommended (v1 default) | promising radios, but current stack maturity not yet primary |
+| ESP32-H2 | specialized tiny wireless node | Not Recommended | no Wi-Fi, mismatched with current INFI baseline workflows |
+| ESP32-P4 | Heavy R&D | Beta (research only) | high compute potential but no integrated radio; requires companion architecture |
+
+---
+
+## 4) STM32 family practical fit
+
+| STM32 line | Typical fit | Status | Rationale |
+|---|---|---|---|
+| F4 | Tiny/Medium | Beta pilot | best first portability target from ESP32-first codebase |
+| F7 | Medium | Beta selective | stronger performance, moderate porting overhead |
+| G4 | Tiny/Medium specialty | Not Recommended (v1 default) | mixed-signal strengths not core to first-wave INFI goals |
+| L5 | Tiny/Medium secure low-power | Beta strategic | secure low-power lane, but not immediate mainstream target |
+| U5 | Tiny/Medium secure low-power | Beta strategic | strong long-life secure profile; staged expansion |
+| H5 | Medium/Heavy secure | Beta strategic | premium secure line for future high-assurance SKUs |
+| H7 | Medium/Heavy high-performance | Beta selective | strong technical fit but higher complexity/cost |
+| WB | Tiny/Medium wireless niche | Not Recommended (v1 default) | product-specific wireless role, not baseline assistant target |
+
+---
+
+## 5) Board-level matrix (current + near-term)
+
+| Board | MCU | Tier fit | Classification | Notes |
 |---|---|---|---|---|
-| M5StickC Plus 2 | ESP32-S3 | Medium | **Recommended** | Already in `platformio.ini`; strong near-term production candidate. |
-| M5Cardputer | ESP32-S3 | Medium / Heavy | **Recommended** | Keyboard/display UX aligns with richer local assistant prompts. |
-| LilyGO T-Embed | ESP32-S3 | Medium / Heavy | **Recommended** | Already integrated; display + input + battery management suitable for advanced local flows. |
-| LilyGO T-Embed CC1101 variants | ESP32-S3 | Medium / Heavy | **Beta-capable** | RF path adds complexity; keep beta until RF + UI regressions stabilize. |
-| M5StickC Plus 1.1 | ESP32 (older) | Tiny / Medium | **Beta-capable** | Works, but less headroom and more board-specific handling. |
-| Generic ESP32-WROOM devkits | ESP32 | Tiny | **Unsupported (v1 distribution)** | Too many hardware permutations for small-team support. |
+| M5StickC Plus 2 | ESP32-S3 | Medium | Recommended | balanced baseline for production assistant features |
+| M5Cardputer | ESP32-S3 | Medium/Heavy | Recommended | keyboard/display makes advanced local workflows practical |
+| LilyGO T-Embed | ESP32-S3 | Medium/Heavy | Recommended | 16 MB class and richer hardware support heavy experimentation |
+| M5StickC Plus 1.1 | ESP32 classic | Tiny/Medium | Beta | 4 MB class constraints require tighter package limits |
+| LilyGO T-Embed CC1101 | ESP32-S3 | Medium/Heavy | Beta | RF/audio/peripheral complexity requires dedicated regression lane |
+| NUCLEO-F446RE | STM32F4 | Tiny/Medium | Beta pilot | first STM32 portability target |
+| Generic ESP32 devkits | varies | Tiny | Not Recommended | hardware variance too high for startup support envelope |
 
 ---
 
-## STM32 Family Matrix (Strategic Expansion)
+## 6) Objective promotion gates
 
-| STM32 Family | Typical Resource Range | Suggested Tier | Classification | Why |
-|---|---|---|---|---|
-| STM32F1 (e.g., F103) | low flash/RAM legacy class | Tiny (theoretical) | **Unsupported (v1)** | Insufficient headroom for practical INFI runtime + modern UX. |
-| STM32F4 (e.g., F405/F411/F429) | moderate flash/RAM, mature ecosystem | Tiny / Medium | **Beta-capable** | Good performance/cost, but porting effort from ESP32-first codebase is non-trivial. |
-| STM32L4/L4+ | low-power with moderate memory | Tiny / Medium | **Beta-capable** | Power-efficient and capable, but less aligned with current display/input assumptions. |
-| STM32G4 | mid-performance mixed-signal class | Tiny / Medium | **Unsupported (v1 default)** | Valuable for specialty builds, not first-wave assistant targets. |
-| STM32H7 | high-performance, large memory options | Medium / Heavy | **Beta-capable (high-end)** | Strong technical fit; BOM cost and board complexity make this a selective premium path. |
-| STM32U5 | efficient modern low-power class | Tiny / Medium | **Unsupported (v1 default)** | Promising but not worth immediate divergence from ESP32-centric roadmap. |
+### Beta -> Recommended requires all of:
+1. 10 consecutive reproducible CI builds.
+2. >=98% board-specific routing accuracy on validated prompts.
+3. Zero unmapped action execution in regression.
+4. 30-minute mixed-load stress run with no lockups.
+5. Complete board profile docs and known-issues guide.
 
----
-
-## Notable STM Boards for Feasibility Planning
-
-| Board | MCU | Tier Fit | Classification | Notes |
-|---|---|---|---|---|
-| NUCLEO-F446RE | STM32F446 | Tiny / Medium | **Beta-capable** | Good dev/test board for porting exercises. |
-| Black Pill F411CE | STM32F411 | Tiny | **Beta-capable** | Cheap and common; good for deterministic command runtime prototypes. |
-| NUCLEO-H743ZI2 | STM32H743 | Medium / Heavy | **Beta-capable** | Strong for high-end experiments; not cost-optimized for broad rollout. |
-| Discovery kits (H7/F4 mixed) | Various | Tiny–Heavy | **Unsupported (v1 distribution)** | Great internal R&D tools; not standardizable product devices. |
+### Recommended -> Demotion triggers
+- safety regression or unmapped action incident
+- repeated CI instability (>2 release cycles)
+- unresolved critical support burden increase
 
 ---
 
-## Recommended v1 Support Set (Small-Team Realism)
+## 7) Tomorrow-morning matrix actions
 
-## Primary (ship with confidence)
-1. **M5StickC Plus 2 (ESP32-S3)** -> Medium
-2. **M5Cardputer (ESP32-S3)** -> Medium/Heavy
-3. **LilyGO T-Embed (ESP32-S3)** -> Medium/Heavy
-
-## Secondary (beta lane)
-1. M5StickC Plus 1.1 -> Tiny/Medium
-2. LilyGO T-Embed CC1101 variants -> Medium/Heavy (RF caveats)
-3. One STM32 pilot board (recommended: NUCLEO-F446RE) for future portability assessment
-
-## Deferred/unsupported for v1
-- Broad generic ESP32 devkits
-- ESP32-C6/S2 broad support
-- Legacy STM32F1 and wide STM board matrix
-
----
-
-## Device-Gating Criteria (Use This for Promotion from Beta -> Recommended)
-A board can be promoted only if it passes:
-1. **Build reproducibility** across clean environments
-2. **Intent routing accuracy** (>=98% on board-specific prompt set)
-3. **Action safety tests** (no unmapped/unsafe execution)
-4. **UI stability tests** (display/input consistency, no lockups)
-5. **Power/thermal sanity** for 30-minute stress loop
-
----
-
-## Practical BOM/Product Notes
-- Keep v1 centered on ESP32-S3 ecosystem to minimize firmware fragmentation.
-- Treat STM32 as strategic expansion only after v1 shows adoption/revenue pull.
-- Heavy tier should map to premium SKUs (bigger memory/display/input), not baseline units.
+1. Freeze the 3-board Recommended set.
+2. Publish explicit Beta caveats for CC1101 and STM32 pilot lanes.
+3. Add board-scoring sheet (0-100) and baseline each candidate.
+4. Enforce promotion gates in release checklist before any status change.

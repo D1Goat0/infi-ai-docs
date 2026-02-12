@@ -1,3 +1,7 @@
+> Canonical status (2026-02-12): Commercial model remains active and is now linked to execution gates and hardware tiers in:
+> - `docs/INFI-AI-MASTER-IMPLEMENTATION-GUIDE.md`
+> - `docs/INFI-AI-ROADMAP-AND-OPERATING-RHYTHM.md`
+
 # INFI AI Revenue Paths (Roadmap-Aligned)
 
 > Alignment note (2026-02-12): Commercial sequencing is cross-linked with the unified execution plan in `docs/INFI-AI-MASTER-IMPLEMENTATION-GUIDE.md`.

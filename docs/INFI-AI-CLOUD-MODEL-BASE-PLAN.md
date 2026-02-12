@@ -1,6 +1,6 @@
 # INFI AI Cloud Model Base Plan
 
-_Last updated: 2026-02-12 00:50 EST_
+_Last updated: 2026-02-12 02:35 EST_
 
 Purpose: define the production-ready cloud model base for INFI with deterministic routing, cost guardrails, and auditable safety behavior.
 
@@ -11,7 +11,7 @@ Purpose: define the production-ready cloud model base for INFI with deterministi
 ### Router tiers
 1. **Tier-R (Reasoning):** premium model for difficult planning/debug tasks.
 2. **Tier-F (Fast):** low-latency model for intent triage, extraction, and short transformations.
-3. **Tier-S (Safety/Policy):** constrained classifier for risk labeling and outbound policy checks.
+3. **Tier-S (Safety/Policy):** constrained classifier for risk labeling + outbound policy checks.
 4. **Tier-O (Offline fallback):** local deterministic parser + rules (no cloud dependency).
 
 ### Control-plane services
@@ -22,23 +22,50 @@ Purpose: define the production-ready cloud model base for INFI with deterministi
 
 ---
 
-## 2) Request Classification Contract
+## 2) Request Classification Contract (Fail-Closed)
 
-Each request must be tagged before provider call:
+Each request must be tagged **before** any provider call:
 - `task_type`: classify|summarize|plan|code|firmware|rf|ops
 - `risk_class`: safe|sensitive|restricted-rf
 - `data_class`: public|internal|confidential
 - `latency_slo_ms`: 300|1000|3000
 - `budget_class`: low|med|high
 
-Routing policy:
-- `restricted-rf` -> block direct execution suggestions; planning-only output with compliance note.
-- `confidential` -> providers on explicit allowlist only.
-- If budget depleted -> degrade to Tier-F or Tier-O (never silently exceed cap).
+Fail-closed defaults:
+- Missing tag(s) => treat as `risk_class=sensitive` + `data_class=internal` + route to Tier-F with strict caps.
+- `restricted-rf` => **planning-only** output; no step-by-step enablement guidance; include compliance note.
+- `confidential` => providers on explicit allowlist only; prefer Tier-O if the request can be satisfied via local corpora.
 
 ---
 
-## 3) Provider Abstraction (Implementation Shape)
+## 3) Routing Policy (Deterministic)
+
+Routing is a pure function of tags + health + budget.
+
+### Preferred route table (initial)
+| Condition | Default route | Notes |
+|---|---|---|
+| `task_type=plan` and `budget_class=high` | Tier-R | Use for architecture, integration plans, hard debugging |
+| `task_type=code` and `latency_slo_ms<=1000` | Tier-F | Use for diffs, refactors, quick fixes |
+| `task_type=classify` or `summarize` | Tier-F | Keep prompts short + structured output |
+| `risk_class=sensitive` | Tier-S then Tier-F/R | Tier-S provides allow/deny + redaction guidance |
+| `risk_class=restricted-rf` | Tier-S then Tier-R (plan-only) | Explicitly blocks certain outputs |
+| Budget depleted | Tier-F then Tier-O | Never silently exceed cap |
+| Provider degraded | Failover chain | Reason-coded and logged |
+
+### Required reason codes
+Every decision emits a reason code list (ordered):
+- `ROUTE_BY_TAGS`
+- `BUDGET_CAP`
+- `LATENCY_SLO`
+- `PROVIDER_DOWN`
+- `POLICY_BLOCK`
+- `DATA_CLASS_RESTRICT`
+- `FALLBACK_OFFLINE`
+
+---
+
+## 4) Provider Abstraction (Implementation Shape)
 
 ```ts
 interface ModelRouter {
@@ -54,24 +81,33 @@ interface RoutedRequest {
   preferredQuality: 'high'|'balanced'|'fast'
   prompt: string
 }
-```
 
-Required response envelope:
-- chosen provider/model
-- estimated + actual token/cost
-- policy checks run + result
-- fallback chain used
-- trace_id
+interface RoutedResponse {
+  traceId: string
+  provider: string
+  model: string
+  tokensEstimated?: number
+  tokensUsed?: number
+  costUsdEstimated?: number
+  costUsdActual?: number
+  decisionReasons: string[]
+  policy: {
+    preflight: 'pass'|'block'|'needs_redaction'
+    notes?: string
+  }
+  content: string
+}
+```
 
 ---
 
-## 4) Spend and Reliability Controls
+## 5) Spend + Reliability Controls
 
 ### Spend controls
 - Hard daily budget (global + per-workstream)
-- Per-request max cost
+- Per-request max cost (derived from `budget_class`)
 - Burst limiter (N high-tier calls per 10 minutes)
-- Automatic downgrade path with explicit reason code (`BUDGET_CAP`, `LATENCY_BREACH`, `PROVIDER_DOWN`)
+- Automatic downgrade path with explicit reason code
 
 ### Reliability controls
 - Provider health cache (p50/p95 latency, 5xx rate, timeout rate)
@@ -81,28 +117,36 @@ Required response envelope:
 
 ---
 
-## 5) Security and Audit Minimums
+## 6) Security and Audit Minimums
 
 - Redact secrets before outbound call (token/credential pattern scrub)
 - Encrypted logs at rest for traces
 - Immutable audit record for model decisions
 - 30-day searchable trace index + export endpoint
-- No prompt payload logging for confidential class unless explicit debug mode is enabled
+- No prompt payload logging for `confidential` unless explicit debug mode is enabled
+
+**Trace minimum fields:**
+- `trace_id`, timestamp, request tags
+- route decision + reason codes
+- provider/model selected
+- cost + latency
+- hash of prompt + hash of response (store hashes even when payload suppressed)
 
 ---
 
-## 6) First Execution Backlog (48h)
+## 7) First Execution Backlog (48h)
 
-1. Define `model-router` API + policy YAML schema.
+1. Define `model-router` API + **policy YAML schema** (tags + allowlist + caps).
 2. Add provider adapter stubs (R/F/S lanes).
-3. Implement risk/data preflight classifier.
+3. Implement risk/data preflight classifier (Tier-S).
 4. Add cost ledger + hard cap enforcement.
 5. Emit trace record per call with reason codes.
 6. Add synthetic tests: budget cap, failover, restricted-rf blocking.
+7. Add "confidential => payload suppression" tests.
 
 ---
 
-## 7) Metrics (Ship Gates)
+## 8) Metrics (Ship Gates)
 
 - Route decision trace coverage: **100%**
 - Budget cap violation: **0**
@@ -112,10 +156,10 @@ Required response envelope:
 
 ---
 
-## 8) Risks
+## 9) Known Risks
 
 - Over-fragmented model stack increases maintenance overhead.
 - Cost spikes from unbounded reasoning calls if tags are missing.
-- Hidden confidential leakage risk without robust preflight redaction.
+- Confidential leakage risk without robust preflight redaction.
 
-Mitigation: strict request schema validation + fail-closed defaults.
+Mitigation: strict request schema validation + fail-closed defaults + trace-ledger always-on.

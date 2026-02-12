@@ -1,3 +1,8 @@
+> Canonical status (2026-02-12): Integration notes remain valid and are now synchronized to:
+> - `docs/INFI-AI-MASTER-IMPLEMENTATION-GUIDE.md`
+> - `docs/INFI-AI-DATASET-BUILD-SPEC.md`
+> - `docs/INFI-AI-HARDWARE-COMPATIBILITY-DEEP-DIVE.md`
+
 # INFI AI Integration Notes (Firmware + Repo Workflow)
 
 > Alignment note (2026-02-12): Dataset and packaging details are now standardized in `docs/INFI-AI-DATASET-BUILD-SPEC.md`; master implementation flow is in `docs/INFI-AI-MASTER-IMPLEMENTATION-GUIDE.md`.

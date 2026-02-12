@@ -1,3 +1,7 @@
+> Canonical status (2026-02-12): This execution plan is retained as a concise baseline. Current operating authority is:
+> - `docs/INFI-AI-MASTER-IMPLEMENTATION-GUIDE.md`
+> - `docs/INFI-AI-ROADMAP-AND-OPERATING-RHYTHM.md`
+
 # INFI AI Execution Plan (Cloud + Embedded)
 
 > Alignment note (2026-02-12): This plan is now synchronized with `docs/INFI-AI-MASTER-IMPLEMENTATION-GUIDE.md` and `docs/INFI-AI-ROADMAP-AND-OPERATING-RHYTHM.md`.

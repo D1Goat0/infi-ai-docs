@@ -1,3 +1,9 @@
+> Canonical status (2026-02-12): This architecture baseline is active, but implementation authority now resides in the deep doc set:
+> - `docs/INFI-AI-MASTER-IMPLEMENTATION-GUIDE.md`
+> - `docs/INFI-AI-HARDWARE-COMPATIBILITY-DEEP-DIVE.md`
+> - `docs/INFI-AI-DATASET-BUILD-SPEC.md`
+> - `docs/INFI-AI-ROADMAP-AND-OPERATING-RHYTHM.md`
+
 # INFI AI Architecture Spec (Cloud + Embedded)
 
 > Alignment note (2026-02-12): Canonical cross-functional execution now lives in `docs/INFI-AI-MASTER-IMPLEMENTATION-GUIDE.md`. Use this file as architecture baseline and read alongside the master guide.
