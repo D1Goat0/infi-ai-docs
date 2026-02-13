@@ -8,6 +8,8 @@ _Last updated: 2026-02-12 (milestone: cloud base plan + device coverage + RF lan
 - Hardware: `docs/INFI-AI-HARDWARE-COMPATIBILITY-DEEP-DIVE.md`
 - Dataset system: `docs/INFI-AI-DATASET-BUILD-SPEC.md`
 - Roadmap + cadence: `docs/INFI-AI-ROADMAP-AND-OPERATING-RHYTHM.md`
+- Device scoring worksheet: `docs/INFI-AI-DEVICE-COVERAGE-SCORING-WORKSHEET.md`
+- Firmware task graph: `docs/INFI-AI-FIRMWARE-INTEGRATION-TASK-GRAPH.md`
 
 ---
 
@@ -340,6 +342,8 @@ Canonical deep details live in `docs/INFI-AI-HARDWARE-COMPATIBILITY-DEEP-DIVE.md
 
 - Architecture baseline: `INFI_AI_ARCHITECTURE.md`
 - Device tier matrix: `INFI_AI_DEVICE_TIER_MATRIX.md`
+- Device scoring worksheet: `docs/INFI-AI-DEVICE-COVERAGE-SCORING-WORKSHEET.md`
 - Integration notes: `INFI_AI_INTEGRATION_NOTES.md`
+- Firmware integration task graph: `docs/INFI-AI-FIRMWARE-INTEGRATION-TASK-GRAPH.md`
 - Execution baseline: `INFI_AI_EXECUTION_PLAN.md`
 - Revenue model: `INFI_AI_REVENUE_PATHS.md`
