@@ -296,9 +296,6 @@ function Kpi({ title, value, note }: { title: string, value: string, note: strin
 }
 
 function Gateways({ apiKey, onPaired }: { apiKey: string, onPaired: () => Promise<void> }) {
-  const [name, setName] = useState('CM5-main')
-  const [baseUrl, setBaseUrl] = useState('http://127.0.0.1:18789')
-  const [token, setToken] = useState('')
   const [code, setCode] = useState('')
   const [status, setStatus] = useState('')
 
@@ -310,88 +307,69 @@ function Gateways({ apiKey, onPaired }: { apiKey: string, onPaired: () => Promis
       return
     }
     setCode(String(r.data.code || ''))
-    setStatus('Code generated. Run the one-liner on the gateway host.')
+    setStatus('Code generated. Tell Infi “pair” in Telegram to get a code, then paste it here.')
   }
 
-  function oneLiner(site = window.location.origin) {
-    const payload = {
-      code,
-      name,
-      baseUrl,
-      token,
-    }
-    const json = JSON.stringify(payload)
-    return `curl -sS -X POST ${site}/api/pair/claim -H 'content-type: application/json' -d '${json.replace(/'/g, "'\\''")}'`
-  }
-
-  async function claimFromHere() {
-    setStatus('Claiming from this browser...')
-    const r = await fetch('/api/pair/claim', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ code, name, baseUrl, token })
-    })
-    const data = await r.json().catch(() => ({}))
+  async function finish() {
+    setStatus('Finishing pair...')
+    const r = await authedJson(apiKey, '/api/pair/finish', { body: { code } })
     if (!r.ok) {
-      setStatus(`Claim failed (${r.status})`)
+      setStatus(String(r.data?.error || `Failed (${r.status})`))
       return
     }
-    setStatus(`Paired: ${data.name}`)
+    setStatus(`Paired: ${r.data?.name || 'gateway'}`)
     await onPaired()
   }
 
   return (
     <div className="glass" style={{ padding: 18 }}>
       <div>
-        <div className="h1">Pair a Gateway</div>
-        <div className="sub">You create a pairing code in the UI. You claim it from the gateway host. Tokens never stay in the browser.</div>
+        <div className="h1">Gateway Pairing</div>
+        <div className="sub">Simple flow: register API key on the gateway host once, then paste pairing codes here.</div>
       </div>
 
       <div className="hr" style={{ margin: '14px 0' }} />
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-        <div style={{ display: 'grid', gap: 10 }}>
-          <label>
-            <div className="sub" style={{ marginBottom: 6 }}>Gateway name</div>
-            <input className="input" value={name} onChange={e => setName(e.target.value)} />
-          </label>
-          <label>
-            <div className="sub" style={{ marginBottom: 6 }}>Gateway base URL</div>
-            <input className="input" value={baseUrl} onChange={e => setBaseUrl(e.target.value)} />
-          </label>
-          <label>
-            <div className="sub" style={{ marginBottom: 6 }}>Gateway token (used once during claim)</div>
-            <input className="input mono" value={token} onChange={e => setToken(e.target.value)} placeholder="paste token" />
-          </label>
-
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+        <div className="glass-soft" style={{ padding: 16 }}>
+          <div style={{ fontWeight: 900, marginBottom: 8 }}>Step A — Generate code</div>
+          <div className="sub" style={{ lineHeight: 1.7 }}>
+            Click generate, then ask Infi in Telegram: <span className="mono">pair</span>.
+            Infi will respond with a pairing code.
+          </div>
+          <div style={{ display: 'flex', gap: 10, marginTop: 12, alignItems: 'center' }}>
             <button className="btn btn-primary" onClick={start}>Generate pairing code</button>
             <div className="sub">{status}</div>
           </div>
 
           {code ? (
-            <div className="glass-soft" style={{ padding: 14 }}>
-              <div className="sub">Pairing code</div>
-              <div className="mono" style={{ fontWeight: 900, marginTop: 8 }}>{code}</div>
+            <div style={{ marginTop: 12 }}>
+              <div className="sub" style={{ marginBottom: 6 }}>Pairing code</div>
+              <input className="input mono" value={code} onChange={e => setCode(e.target.value)} />
             </div>
           ) : null}
+
+          <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
+            <button className="btn" onClick={finish} disabled={!code}>Finish pairing</button>
+          </div>
         </div>
 
         <div className="glass-soft" style={{ padding: 16 }}>
-          <div style={{ fontWeight: 900, marginBottom: 6 }}>Instructions</div>
+          <div style={{ fontWeight: 900, marginBottom: 8 }}>Step B — One-time gateway setup command</div>
           <div className="sub" style={{ lineHeight: 1.7 }}>
-            1) Click <b>Generate pairing code</b>.<br />
-            2) On the gateway host (where OpenClaw runs), run the one-liner below.<br />
-            3) Refresh — the gateway will appear under your API key.
+            Run this once on the gateway host so Infi can securely store the gateway connection.
+            This is where the gateway token is used — not in the browser.
           </div>
-
           <div className="hr" style={{ margin: '12px 0' }} />
-
-          <div className="sub" style={{ marginBottom: 8 }}>One-liner</div>
-          <pre className="mono" style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{code ? oneLiner() : 'Generate a code first.'}</pre>
-
-          <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
-            <button className="btn" onClick={claimFromHere} disabled={!code || !token}>Claim from here (dev)</button>
+          <div className="sub" style={{ marginBottom: 8 }}>Command</div>
+          <pre className="mono" style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{
+`curl -sS -X POST ${window.location.origin}/api/apikey/register \\
+  -H 'authorization: Bearer ${apiKey}' \\
+  -H 'content-type: application/json' \\
+  -d '{"name":"CM5-main","baseUrl":"http://127.0.0.1:18789","token":"<GATEWAY_TOKEN>"}'`
+          }</pre>
+          <div className="sub" style={{ marginTop: 10 }}>
+            After running it, generate a pairing code and finish pairing.
           </div>
         </div>
       </div>

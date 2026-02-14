@@ -14,8 +14,13 @@
   status = 200
 
 [[redirects]]
-  from = "/api/pair/claim"
-  to = "/.netlify/functions/pair_claim"
+  from = "/api/pair/finish"
+  to = "/.netlify/functions/pair_finish"
+  status = 200
+
+[[redirects]]
+  from = "/api/apikey/register"
+  to = "/.netlify/functions/apikey_register"
   status = 200
 
 [[redirects]]
