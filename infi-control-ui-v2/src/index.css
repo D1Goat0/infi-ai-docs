@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: dark;
+  --bg: #070b12;
+  --panel: #0b1220;
+  --panel2: #0d172a;
+  --text: #e6eefc;
+  --muted: #9bb0d1;
+  --border: rgba(120, 160, 220, 0.18);
+  --infiltra: #00ff8a;
+  --openclaw: #6aa6ff;
+}
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  background: radial-gradient(1200px 900px at 20% 10%, rgba(106,166,255,0.10), transparent 60%),
+              radial-gradient(1200px 900px at 80% 20%, rgba(0,255,138,0.08), transparent 55%),
+              var(--bg);
+  color: var(--text);
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+a { color: inherit; }
+
+.card {
+  background: linear-gradient(180deg, rgba(13,23,42,0.92), rgba(11,18,32,0.92));
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.35);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(12, 18, 32, 0.6);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.btn {
+  border: 1px solid var(--border);
+  background: rgba(10, 16, 30, 0.6);
+  color: var(--text);
+  padding: 10px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.btn-primary {
+  border-color: rgba(0,255,138,0.35);
+  background: linear-gradient(180deg, rgba(0,255,138,0.16), rgba(0,255,138,0.08));
+}
+
+.input {
+  width: 100%;
+  background: rgba(10, 16, 30, 0.55);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  color: var(--text);
+}
+
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
