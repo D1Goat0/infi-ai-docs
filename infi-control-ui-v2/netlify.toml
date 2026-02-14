@@ -9,6 +9,31 @@
   directory = "netlify/functions"
 
 [[redirects]]
+  from = "/api/pair/start"
+  to = "/.netlify/functions/pair_start"
+  status = 200
+
+[[redirects]]
+  from = "/api/pair/claim"
+  to = "/.netlify/functions/pair_claim"
+  status = 200
+
+[[redirects]]
+  from = "/api/connections/list"
+  to = "/.netlify/functions/connections_list"
+  status = 200
+
+[[redirects]]
+  from = "/api/gateway/send"
+  to = "/.netlify/functions/gateway_send"
+  status = 200
+
+[[redirects]]
+  from = "/api/gateway/health"
+  to = "/.netlify/functions/gateway_health"
+  status = 200
+
+[[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"
   status = 200

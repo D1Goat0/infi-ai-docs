@@ -465,9 +465,14 @@ function Onboarding({
   setApiKey: (k: string) => void
   onPaired: () => Promise<void>
 }) {
-  const [step, setStep] = useState<1 | 2 | 3>(apiKey ? 2 : 1)
-  const [localKey, setLocalKey] = useState(apiKey || genKey())
+  const initialKey = apiKey || genKey()
+  const [step, setStep] = useState<1 | 2 | 3>(1)
+  const [localKey, setLocalKey] = useState(initialKey)
   const [status, setStatus] = useState('')
+
+  useEffect(() => {
+    if (!apiKey) setApiKey(initialKey)
+  }, [])
 
   async function startPair() {
     setStatus('Generating pairing code...')
@@ -510,23 +515,25 @@ function Onboarding({
               {step === 1 ? (
                 <>
                   <div className="sub" style={{ lineHeight: 1.7 }}>
-                    Create your INFI API key. This key authorizes the website to list and use your paired gateways.
+                    Your INFI API key was auto-generated. Copy it and keep it safe — anyone with it can use your paired gateways.
                   </div>
                   <div style={{ marginTop: 12 }}>
                     <div className="sub" style={{ marginBottom: 6 }}>API key</div>
                     <input className="input mono" value={localKey} onChange={e => setLocalKey(e.target.value)} />
-                    <div className="sub" style={{ marginTop: 8 }}>Store it somewhere safe. Anyone with this key can use your connections.</div>
-                  </div>
-                  <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
-                    <button
-                      className="btn btn-primary"
-                      onClick={() => {
-                        setApiKey(localKey)
-                        setStep(2)
-                      }}
-                    >
-                      Save API key
-                    </button>
+                    <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
+                      <button className="btn" onClick={() => navigator.clipboard.writeText(localKey)}>Copy</button>
+                      <button
+                        className="btn"
+                        onClick={() => {
+                          const k = genKey()
+                          setLocalKey(k)
+                          setApiKey(k)
+                        }}
+                      >
+                        Rotate key
+                      </button>
+                      <button className="btn btn-primary" onClick={() => { setApiKey(localKey); setStep(2) }}>Continue</button>
+                    </div>
                   </div>
                 </>
               ) : null}
