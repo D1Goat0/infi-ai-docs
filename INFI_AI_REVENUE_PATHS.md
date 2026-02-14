@@ -39,8 +39,9 @@ Purpose: convert serious users without requiring enterprise sales motion.
 - Shared cloud workspace + report exports
 - Priority compatibility updates for recommended boards
 - Early beta access to heavy-tier features
+- **Funded validation lane:** access to selected high-support Beta boards (e.g., RF variants) only when the plan price covers the added regression + compliance workload
 
-Purpose: higher ARPU from teams using multiple devices/workflows.
+Purpose: higher ARPU from teams using multiple devices/workflows (and a mechanism to *pay for* support-expensive expansion).
 
 ## OEM / Partner (Selective)
 - Custom board profile support
@@ -139,6 +140,7 @@ If support cost per beta device is too high, tighten beta access and focus on re
 
 1. **Overpromising hardware support**
    - Publish strict recommended/beta/unsupported matrix and keep it current.
+   - Any **exception** board (below scoring threshold) must be explicitly labeled “funded validation only” and tied to a Decision Log entry with cancellation gates.
 
 2. **Underpricing high-touch support**
    - Gate priority support to Team/OEM tiers.

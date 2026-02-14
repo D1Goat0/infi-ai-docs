@@ -114,7 +114,8 @@ Notes: keep Recommended due to v1 policy, but watch variance + support burden; r
 - Support burden: 9/15
 - Monetization leverage: 9/10
 **Total:** 69/100
-Notes: monetization leverage is high, but RF harness + compliance gating increase validation cost. Keep Beta until RF-L2 gates are green.
+Notes: monetization leverage is high, but RF harness + compliance gating increase validation cost.
+Decision: treat as a **Strategic monetization exception** (see §5) and keep in **Beta** only if (a) validation is funded (Pro+/Team/OEM cohort) and (b) RF-L2 gates are green. Otherwise demote to Not Recommended for v1.
 
 ### 4.5 M5StickC Plus 1.1 (ESP32 classic)
 - Demand: 14/20

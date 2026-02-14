@@ -7,6 +7,10 @@ Purpose: turn the integration plan into a dependency-aware task graph that can b
 Primary references:
 - `docs/INFI-AI-MASTER-IMPLEMENTATION-GUIDE.md` (§4 Integration Strategy)
 - `INFI_AI_INTEGRATION_NOTES.md`
+- Device support discipline:
+  - `docs/INFI-AI-DEVICE-COVERAGE-SCORING-WORKSHEET.md` (thresholds)
+  - `INFI_AI_DEVICE_TIER_MATRIX.md` (labels)
+  - Exception policy (§5 in the worksheet) must be followed before adding any new board/env.
 
 Target repo: `repos/pamir-infiltra`
 

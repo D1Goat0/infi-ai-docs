@@ -16,7 +16,9 @@ This specification defines how INFI AI datasets are authored, validated, normali
 
 ---
 
-## 2) Canonical Repository Layout
+## 2) Target Repository Layout (v1 baseline)
+
+This is the **intended** canonical layout. If your current dataset repo is missing any of these files, treat that as a build-blocking gap for the first public dataset release.
 
 ```text
 infi-ai-data/
@@ -234,7 +236,7 @@ A dataset release is valid only if all are true:
 
 ## 14) Immediate Implementation Checklist
 
-- [ ] Add `board_registry` schema and canonical source file.
+- [ ] If not already present, add `board_registry` schema and canonical source file (required before first public dataset release).
 - [ ] Implement semantic validator for capability/action contracts.
 - [ ] Add signature verification integration test.
 - [ ] Define package budget thresholds per tier and enforce in CI.
