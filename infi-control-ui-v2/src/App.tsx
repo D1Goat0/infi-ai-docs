@@ -173,6 +173,8 @@ export default function App() {
           }} />
         ) : tab === 'chat' ? (
           <Chat apiKey={apiKey} active={active} />
+        ) : tab === 'settings' ? (
+          <Settings apiKey={apiKey} />
         ) : (
           <ComingSoon tab={tab} />
         )}
@@ -430,6 +432,70 @@ function ComingSoon({ tab }: { tab: Tab }) {
       <div className="sub" style={{ marginTop: 8 }}>
         {tab} ships as focused milestones: tasks/collab, plugin catalog, bindings generator, keys, and audit.
       </div>
+    </div>
+  )
+}
+
+function Settings({ apiKey }: { apiKey: string }) {
+  const [status, setStatus] = useState('')
+
+  function restartLocal() {
+    localStorage.removeItem('infi.v2.activeConnectionId')
+    localStorage.removeItem('infi.v2.lastPairCode')
+    setStatus('Restarted locally. Reloading...')
+    setTimeout(() => window.location.reload(), 300)
+  }
+
+  async function deleteInstance() {
+    const ok = window.confirm('Delete this instance? This will remove all paired gateways for this API key and restart onboarding.')
+    if (!ok) return
+
+    setStatus('Deleting instance...')
+
+    const resp = await authedJson(apiKey, '/api/apikey/reset', { body: {} })
+    if (!resp.ok) {
+      setStatus(String(resp.data?.error || `Failed (${resp.status})`))
+      return
+    }
+
+    localStorage.removeItem('infi.v2.apiKey')
+    localStorage.removeItem('infi.v2.activeConnectionId')
+    localStorage.removeItem('infi.v2.lastPairCode')
+
+    setStatus('Deleted. Reloading...')
+    setTimeout(() => window.location.reload(), 300)
+  }
+
+  return (
+    <div className="glass" style={{ padding: 18 }}>
+      <div className="h1">Settings</div>
+      <div className="sub" style={{ marginTop: 8 }}>Restart and delete controls for this Control UI instance.</div>
+
+      <div className="hr" style={{ margin: '14px 0' }} />
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+        <div className="glass-soft" style={{ padding: 16 }}>
+          <div style={{ fontWeight: 900, marginBottom: 6 }}>Restart (local)</div>
+          <div className="sub" style={{ lineHeight: 1.7 }}>
+            Clears local UI state and reloads. Does not delete paired gateways on the server.
+          </div>
+          <div style={{ marginTop: 12 }}>
+            <button className="btn" onClick={restartLocal}>Restart UI</button>
+          </div>
+        </div>
+
+        <div className="glass-soft" style={{ padding: 16, borderColor: 'rgba(255,122,217,0.20)' }}>
+          <div style={{ fontWeight: 900, marginBottom: 6 }}>Danger zone</div>
+          <div className="sub" style={{ lineHeight: 1.7 }}>
+            Deletes all paired gateways for your API key and restarts onboarding.
+          </div>
+          <div style={{ marginTop: 12 }}>
+            <button className="btn" style={{ borderColor: 'rgba(255,122,217,0.28)' }} onClick={deleteInstance}>Delete instance</button>
+          </div>
+        </div>
+      </div>
+
+      <div className="sub" style={{ marginTop: 12 }}>{status}</div>
     </div>
   )
 }

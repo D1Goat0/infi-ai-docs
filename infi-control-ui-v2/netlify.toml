@@ -24,6 +24,11 @@
   status = 200
 
 [[redirects]]
+  from = "/api/apikey/reset"
+  to = "/.netlify/functions/apikey_reset"
+  status = 200
+
+[[redirects]]
   from = "/api/connections/list"
   to = "/.netlify/functions/connections_list"
   status = 200
