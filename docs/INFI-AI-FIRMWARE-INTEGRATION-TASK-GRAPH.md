@@ -10,6 +10,7 @@ Primary references:
 - Device support discipline:
   - `docs/INFI-AI-DEVICE-COVERAGE-SCORING-WORKSHEET.md` (thresholds)
   - `INFI_AI_DEVICE_TIER_MATRIX.md` (labels)
+  - `docs/INFI-AI-DECISION-LOG.md` (mandatory for threshold overrides)
   - Exception policy (§5 in the worksheet) must be followed before adding any new board/env.
 
 Target repo: `repos/pamir-infiltra`

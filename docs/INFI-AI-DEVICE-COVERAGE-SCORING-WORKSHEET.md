@@ -147,7 +147,7 @@ Allowed exception classes:
 1. **Portability pilot** (e.g., NUCLEO reference boards) where variance is low and purpose is engineering leverage.
 2. **Strategic monetization** where a board unlocks a paid tier, but only if validation cost is funded (Team/OEM) and gates are tightened.
 
-Exception requires a written Decision Log entry:
+Exception requires a written Decision Log entry in `docs/INFI-AI-DECISION-LOG.md`:
 - why this exception is worth it
 - what it will replace/defer (opportunity cost)
 - what gate would cause cancellation

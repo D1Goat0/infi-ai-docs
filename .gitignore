@@ -5,6 +5,9 @@
 memory/
 repos/
 
+# ClawHub metadata (workspace-local)
+.clawhub/
+
 # Local identity / operator notes (do not commit)
 USER.md
 TOOLS.md

@@ -6,7 +6,7 @@
 
 > Alignment note (2026-02-12): Commercial sequencing is cross-linked with the unified execution plan in `docs/INFI-AI-MASTER-IMPLEMENTATION-GUIDE.md`.
 
-_Last updated: 2026-02-11_
+_Last updated: 2026-02-14_
 
 ## Goal
 Monetize INFI AI in ways that directly reinforce:
@@ -39,7 +39,7 @@ Purpose: convert serious users without requiring enterprise sales motion.
 - Shared cloud workspace + report exports
 - Priority compatibility updates for recommended boards
 - Early beta access to heavy-tier features
-- **Funded validation lane:** access to selected high-support Beta boards (e.g., RF variants) only when the plan price covers the added regression + compliance workload
+- **Funded validation lane:** access to selected high-support Beta boards (e.g., RF variants) only when the plan price covers the added regression + compliance workload (see `docs/INFI-AI-DECISION-LOG.md`, e.g. DL-2026-02-13-01)
 
 Purpose: higher ARPU from teams using multiple devices/workflows (and a mechanism to *pay for* support-expensive expansion).
 
