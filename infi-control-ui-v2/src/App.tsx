@@ -96,7 +96,8 @@ export default function App() {
           setApiKeyState(k)
         }}
         onPaired={async () => {
-          const resp = await authed(apiKey || getApiKey(), '/api/connections/list', { method: 'GET' })
+          const k = getApiKey()
+          const resp = await authed(k, '/api/connections/list', { method: 'GET' })
           const data = await resp.json().catch(() => ({}))
           if (data?.connections && Array.isArray(data.connections)) {
             setConnections(data.connections)
@@ -613,7 +614,10 @@ function Onboarding({
                     <button
                       className="btn btn-primary"
                       onClick={async () => {
+                        setStatus('Checking connections...')
                         await onPaired()
+                        setStatus('If you still see onboarding, reload the page.')
+                        setTimeout(() => window.location.reload(), 350)
                       }}
                     >
                       I ran it — refresh connections
