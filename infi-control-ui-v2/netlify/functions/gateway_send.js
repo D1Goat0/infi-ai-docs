@@ -1,32 +1,51 @@
-export default async (req) => {
-  const headers = {
+import { store } from './_store.js'
+import { decryptJson } from './_crypto.js'
+
+function cors() {
+  return {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Allow-Methods': 'POST, OPTIONS'
-  };
+  }
+}
 
-  if (req.method === 'OPTIONS') return new Response('', { status: 204, headers });
-  if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405, headers: { ...headers, 'Content-Type': 'application/json' } });
+function json(status, body) {
+  return new Response(JSON.stringify(body), { status, headers: { ...cors(), 'Content-Type': 'application/json' } })
+}
+
+export default async (req) => {
+  if (req.method === 'OPTIONS') return new Response('', { status: 204, headers: cors() })
+  if (req.method !== 'POST') return json(405, { error: 'Method not allowed' })
+
+  const apiKey = (req.headers.get('authorization') || '').replace(/^Bearer\s+/i, '').trim()
+  if (!apiKey) return json(401, { error: 'Missing API key (Authorization: Bearer ...)' })
+
+  let body
+  try { body = await req.json() } catch { return json(400, { error: 'Invalid JSON body' }) }
+
+  const connectionId = String(body.connectionId || '').trim()
+  const sessionKey = String(body.sessionKey || 'agent:main:main')
+  const message = String(body.message || '').trim()
+
+  if (!connectionId) return json(400, { error: 'connectionId required' })
+  if (!message) return json(400, { error: 'message required' })
+
+  const s = store()
+  const idxRaw = (await s.get(`idx:${apiKey}`)) || '[]'
+  let idx
+  try { idx = JSON.parse(idxRaw) } catch { idx = [] }
+  if (!Array.isArray(idx) || !idx.some(x => x && x.connectionId === connectionId)) {
+    return json(403, { error: 'connection not authorized for this apiKey' })
   }
 
-  let body;
-  try { body = await req.json(); } catch {
-    return new Response(JSON.stringify({ error: 'Invalid JSON body' }), { status: 400, headers: { ...headers, 'Content-Type': 'application/json' } });
-  }
+  const enc = await s.get(`conn:${connectionId}`)
+  if (!enc) return json(404, { error: 'connection not found' })
 
-  const baseUrl = String(body.baseUrl || '').replace(/\/$/, '');
-  const token = String(body.token || '');
-  const sessionKey = String(body.sessionKey || 'agent:main:main');
-  const message = String(body.message || '').trim();
+  const serverSecret = process.env.INFI_SERVER_SECRET || ''
+  const conn = await decryptJson(serverSecret, enc)
 
-  if (!baseUrl || !token) {
-    return new Response(JSON.stringify({ error: 'baseUrl and token required' }), { status: 400, headers: { ...headers, 'Content-Type': 'application/json' } });
-  }
-
-  if (!message) {
-    return new Response(JSON.stringify({ error: 'message required' }), { status: 400, headers: { ...headers, 'Content-Type': 'application/json' } });
-  }
+  const baseUrl = String(conn.baseUrl || '').replace(/\/$/, '')
+  const token = String(conn.token || '')
 
   const resp = await fetch(`${baseUrl}/v1/sessions/send`, {
     method: 'POST',
@@ -35,14 +54,11 @@ export default async (req) => {
       Authorization: `Bearer ${token}`
     },
     body: JSON.stringify({ sessionKey, message })
-  });
+  })
 
-  const text = await resp.text();
-  let data;
-  try { data = JSON.parse(text); } catch { data = { raw: text }; }
+  const text = await resp.text()
+  let data
+  try { data = JSON.parse(text) } catch { data = { raw: text } }
 
-  return new Response(JSON.stringify({ ok: resp.ok, status: resp.status, data }), {
-    status: 200,
-    headers: { ...headers, 'Content-Type': 'application/json' }
-  });
-};
+  return json(200, { ok: resp.ok, status: resp.status, data })
+}

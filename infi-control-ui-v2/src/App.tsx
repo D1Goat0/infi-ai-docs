@@ -1,47 +1,57 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import './index.css'
 
 type Tab = 'dashboard' | 'chat' | 'gateways' | 'agents' | 'plugins' | 'bindings' | 'keys' | 'audit' | 'settings'
 
-type GatewayConn = {
-  id: string
+type Connection = {
+  connectionId: string
   name: string
   baseUrl: string
-  token: string
+  createdAt: number
 }
 
-const LS_CONNS = 'infi.v2.gateways'
-const LS_ONBOARDED = 'infi.v2.onboarded'
+const LS_APIKEY = 'infi.v2.apiKey'
+const LS_ACTIVE = 'infi.v2.activeConnectionId'
 
-function loadConns(): GatewayConn[] {
-  try {
-    const raw = localStorage.getItem(LS_CONNS)
-    if (!raw) return []
-    const parsed = JSON.parse(raw)
-    if (!Array.isArray(parsed)) return []
-    return parsed
-  } catch {
-    return []
-  }
+function getApiKey() {
+  try { return localStorage.getItem(LS_APIKEY) || '' } catch { return '' }
 }
 
-function saveConns(conns: GatewayConn[]) {
-  localStorage.setItem(LS_CONNS, JSON.stringify(conns))
+function setApiKey(v: string) {
+  localStorage.setItem(LS_APIKEY, v)
 }
 
-function loadOnboarded() {
-  return localStorage.getItem(LS_ONBOARDED) === '1'
+function getActiveId() {
+  try { return localStorage.getItem(LS_ACTIVE) || '' } catch { return '' }
 }
 
-function setOnboarded() {
-  localStorage.setItem(LS_ONBOARDED, '1')
+function setActiveId(v: string) {
+  localStorage.setItem(LS_ACTIVE, v)
 }
 
-async function postJson(url: string, body: any) {
-  const resp = await fetch(url, {
-    method: 'POST',
+function b64url(bytes: Uint8Array) {
+  let s = ''
+  for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i])
+  const b64 = btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '')
+  return b64
+}
+
+function genKey() {
+  const bytes = crypto.getRandomValues(new Uint8Array(24))
+  return `infi_${b64url(bytes)}`
+}
+
+async function authed(apiKey: string, url: string, init: RequestInit) {
+  const headers = new Headers(init.headers || {})
+  headers.set('Authorization', `Bearer ${apiKey}`)
+  return fetch(url, { ...init, headers })
+}
+
+async function authedJson(apiKey: string, url: string, init: { method?: string, body?: any }) {
+  const resp = await authed(apiKey, url, {
+    method: init.method || 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+    body: init.body === undefined ? undefined : JSON.stringify(init.body),
   })
   const data = await resp.json().catch(() => ({}))
   return { ok: resp.ok, status: resp.status, data }
@@ -49,75 +59,96 @@ async function postJson(url: string, body: any) {
 
 export default function App() {
   const [tab, setTab] = useState<Tab>('dashboard')
-  const [conns, setConns] = useState<GatewayConn[]>(() => loadConns())
-  const [activeId, setActiveId] = useState<string>(() => conns[0]?.id || '')
-  const active = useMemo(() => conns.find(c => c.id === activeId) || conns[0] || null, [conns, activeId])
-  const [onboarded, setOnboardedState] = useState<boolean>(() => loadOnboarded())
+  const [apiKey, setApiKeyState] = useState<string>(() => getApiKey())
+  const [connections, setConnections] = useState<Connection[]>([])
+  const [activeConnectionId, setActiveConnectionIdState] = useState<string>(() => getActiveId())
 
-  function upsertConn(conn: GatewayConn) {
-    const next = [...conns]
-    const idx = next.findIndex(c => c.id === conn.id)
-    if (idx >= 0) next[idx] = conn
-    else next.push(conn)
+  const active = useMemo(() => connections.find(c => c.connectionId === activeConnectionId) || connections[0] || null, [connections, activeConnectionId])
 
-    setConns(next)
-    saveConns(next)
-    if (!activeId) setActiveId(conn.id)
+  useEffect(() => {
+    if (!apiKey) return
+    let cancelled = false
+    ;(async () => {
+      const resp = await authed(apiKey, '/api/connections/list', { method: 'GET' })
+      const data = await resp.json().catch(() => ({}))
+      if (cancelled) return
+      if (data?.connections && Array.isArray(data.connections)) {
+        setConnections(data.connections)
+        const existing = getActiveId()
+        const fallback = data.connections[0]?.connectionId || ''
+        if (!existing && fallback) {
+          setActiveId(fallback)
+          setActiveConnectionIdState(fallback)
+        }
+      }
+    })()
+    return () => { cancelled = true }
+  }, [apiKey])
 
-    if (!onboarded) {
-      setOnboarded()
-      setOnboardedState(true)
-    }
-  }
-
-  function deleteConn(id: string) {
-    const next = conns.filter(c => c.id !== id)
-    setConns(next)
-    saveConns(next)
-    if (activeId === id) setActiveId(next[0]?.id || '')
-  }
-
-  const needsSetup = !onboarded || conns.length === 0
+  const needsSetup = !apiKey || connections.length === 0
 
   if (needsSetup) {
     return (
       <Onboarding
-        conns={conns}
-        upsert={upsertConn}
-        onFinish={() => {
-          setOnboarded()
-          setOnboardedState(true)
-          setTab('dashboard')
+        apiKey={apiKey}
+        setApiKey={(k) => {
+          setApiKey(k)
+          setApiKeyState(k)
+        }}
+        onPaired={async () => {
+          const resp = await authed(apiKey || getApiKey(), '/api/connections/list', { method: 'GET' })
+          const data = await resp.json().catch(() => ({}))
+          if (data?.connections && Array.isArray(data.connections)) {
+            setConnections(data.connections)
+            const first = data.connections[0]?.connectionId || ''
+            if (first) {
+              setActiveId(first)
+              setActiveConnectionIdState(first)
+            }
+          }
         }}
       />
     )
   }
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', height: '100%' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: '340px 1fr', height: '100%' }}>
       <aside style={{ padding: 18, borderRight: '1px solid rgba(205,228,255,0.10)' }}>
         <div className="glass" style={{ padding: 16, marginBottom: 14 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
             <div>
               <div className="h1 brand">INFI CONTROL</div>
-              <div className="sub">Liquid glass • OpenClaw-style • Infiltra command center</div>
+              <div className="sub">Liquid glass • command center</div>
             </div>
-            <div className="badge">{Math.min(conns.length, 4)}/4 gateways</div>
+            <div className="badge">{Math.min(connections.length, 4)}/4</div>
           </div>
 
           <div className="hr" style={{ margin: '12px 0' }} />
 
           <div>
             <div className="sub" style={{ marginBottom: 6 }}>Active gateway</div>
-            <select className="input" value={active?.id || ''} onChange={e => setActiveId(e.target.value)}>
-              {conns.map(c => (
-                <option key={c.id} value={c.id}>{c.name}</option>
+            <select
+              className="input"
+              value={active?.connectionId || ''}
+              onChange={e => {
+                const v = e.target.value
+                setActiveId(v)
+                setActiveConnectionIdState(v)
+              }}
+            >
+              {connections.map(c => (
+                <option key={c.connectionId} value={c.connectionId}>{c.name}</option>
               ))}
             </select>
             <div className="sub mono" style={{ marginTop: 8, opacity: 0.85 }}>
               {active ? active.baseUrl : ''}
             </div>
           </div>
+
+          <div className="hr" style={{ margin: '12px 0' }} />
+
+          <div className="sub">API key</div>
+          <div className="sub mono" style={{ marginTop: 6, wordBreak: 'break-all' }}>{apiKey.slice(0, 8)}…{apiKey.slice(-6)}</div>
         </div>
 
         <Nav tab={tab} setTab={setTab} />
@@ -126,18 +157,22 @@ export default function App() {
           <div className="sub" style={{ marginBottom: 8 }}>Quick actions</div>
           <div style={{ display: 'grid', gap: 8 }}>
             <button className="btn" onClick={() => setTab('chat')}>Open Chat</button>
-            <button className="btn" onClick={() => setTab('gateways')}>Manage Gateways</button>
+            <button className="btn" onClick={() => setTab('gateways')}>Pair Gateway</button>
           </div>
         </div>
       </aside>
 
       <main style={{ padding: 22 }}>
         {tab === 'dashboard' ? (
-          <Dashboard active={active} conns={conns} />
+          <Dashboard apiKey={apiKey} active={active} connections={connections} />
         ) : tab === 'gateways' ? (
-          <Gateways conns={conns} upsert={upsertConn} del={deleteConn} />
+          <Gateways apiKey={apiKey} onPaired={async () => {
+            const resp = await authed(apiKey, '/api/connections/list', { method: 'GET' })
+            const data = await resp.json().catch(() => ({}))
+            if (data?.connections && Array.isArray(data.connections)) setConnections(data.connections)
+          }} />
         ) : tab === 'chat' ? (
-          <Chat active={active} />
+          <Chat apiKey={apiKey} active={active} />
         ) : (
           <ComingSoon tab={tab} />
         )}
@@ -150,7 +185,7 @@ function Nav({ tab, setTab }: { tab: Tab, setTab: (t: Tab) => void }) {
   const items: { id: Tab, label: string }[] = [
     { id: 'dashboard', label: 'Dashboard' },
     { id: 'chat', label: 'Chat' },
-    { id: 'gateways', label: 'Gateways' },
+    { id: 'gateways', label: 'Gateways (Pairing)' },
     { id: 'agents', label: 'Agents' },
     { id: 'plugins', label: 'Plugins' },
     { id: 'bindings', label: 'Bindings' },
@@ -186,13 +221,15 @@ function Nav({ tab, setTab }: { tab: Tab, setTab: (t: Tab) => void }) {
   )
 }
 
-function Dashboard({ active, conns }: { active: GatewayConn | null, conns: GatewayConn[] }) {
+function Dashboard({ apiKey, active, connections }: { apiKey: string, active: Connection | null, connections: Connection[] }) {
   const [health, setHealth] = useState<string>('')
 
   async function check() {
     if (!active) return
     setHealth('Checking...')
-    const r = await postJson('/api/gateway/health', { baseUrl: active.baseUrl, token: active.token })
+    const r = await authedJson(apiKey, '/api/gateway/health', {
+      body: { connectionId: active.connectionId },
+    })
     setHealth(r.ok ? `Healthy (${r.status})` : `Unhealthy (${r.status})`)
   }
 
@@ -202,7 +239,7 @@ function Dashboard({ active, conns }: { active: GatewayConn | null, conns: Gatew
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16 }}>
           <div>
             <div className="h1">Command Center</div>
-            <div className="sub">Your control layer for 4 gateways, tasks, plugins, and routing.</div>
+            <div className="sub">Pair gateways using a one-time code. No tokens in the browser.</div>
           </div>
           <div className="badge">Active: <span className="mono" style={{ color: 'var(--text)' }}>{active?.name || 'none'}</span></div>
         </div>
@@ -223,10 +260,10 @@ function Dashboard({ active, conns }: { active: GatewayConn | null, conns: Gatew
 
           <div className="glass-soft" style={{ padding: 16 }}>
             <div style={{ fontWeight: 800, marginBottom: 6 }}>Connected gateways</div>
-            <div className="sub" style={{ marginBottom: 10 }}>Up to 4. (Pairing code flow ships next.)</div>
+            <div className="sub" style={{ marginBottom: 10 }}>Up to 4 connections per API key.</div>
             <div style={{ display: 'grid', gap: 8 }}>
-              {conns.slice(0, 4).map(c => (
-                <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
+              {connections.slice(0, 4).map(c => (
+                <div key={c.connectionId} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
                   <div>
                     <div style={{ fontWeight: 700 }}>{c.name}</div>
                     <div className="sub mono">{c.baseUrl}</div>
@@ -240,9 +277,9 @@ function Dashboard({ active, conns }: { active: GatewayConn | null, conns: Gatew
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
-        <Kpi title="Tasks" value="Soon" note="Fan-out + results" />
-        <Kpi title="Bindings" value="Soon" note="Routing generator" />
-        <Kpi title="Audit" value="Soon" note="Redacted tool events" />
+        <Kpi title="Tasks" value="Next" note="Fan-out + results" />
+        <Kpi title="Bindings" value="Next" note="Routing generator" />
+        <Kpi title="Audit" value="Next" note="Redacted tool events" />
       </div>
     </div>
   )
@@ -258,116 +295,122 @@ function Kpi({ title, value, note }: { title: string, value: string, note: strin
   )
 }
 
-function Gateways({
-  conns,
-  upsert,
-  del,
-}: {
-  conns: GatewayConn[]
-  upsert: (c: GatewayConn) => void
-  del: (id: string) => void
-}) {
-  const [name, setName] = useState('')
+function Gateways({ apiKey, onPaired }: { apiKey: string, onPaired: () => Promise<void> }) {
+  const [name, setName] = useState('CM5-main')
   const [baseUrl, setBaseUrl] = useState('http://127.0.0.1:18789')
   const [token, setToken] = useState('')
-  const [status, setStatus] = useState<string>('')
+  const [code, setCode] = useState('')
+  const [status, setStatus] = useState('')
 
-  async function test() {
-    setStatus('Testing...')
-    try {
-      const r = await postJson('/api/gateway/health', { baseUrl, token })
-      setStatus(r.ok ? `OK (${r.status})` : `FAIL (${r.status})`)
-    } catch (e: any) {
-      setStatus(`FAIL (${e?.message || 'error'})`)
-    }
-  }
-
-  function add() {
-    if (conns.length >= 4) {
-      setStatus('Limit reached (4). Remove one to add another.')
+  async function start() {
+    setStatus('Generating code...')
+    const r = await authedJson(apiKey, '/api/pair/start', {})
+    if (!r.ok) {
+      setStatus(`Failed (${r.status})`)
       return
     }
-    const id = crypto.randomUUID()
-    upsert({ id, name: name || `Gateway ${conns.length + 1}`, baseUrl, token })
-    setName('')
-    setToken('')
-    setStatus('Saved.')
+    setCode(String(r.data.code || ''))
+    setStatus('Code generated. Run the one-liner on the gateway host.')
+  }
+
+  function oneLiner(site = window.location.origin) {
+    const payload = {
+      code,
+      name,
+      baseUrl,
+      token,
+    }
+    const json = JSON.stringify(payload)
+    return `curl -sS -X POST ${site}/api/pair/claim -H 'content-type: application/json' -d '${json.replace(/'/g, "'\\''")}'`
+  }
+
+  async function claimFromHere() {
+    setStatus('Claiming from this browser...')
+    const r = await fetch('/api/pair/claim', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ code, name, baseUrl, token })
+    })
+    const data = await r.json().catch(() => ({}))
+    if (!r.ok) {
+      setStatus(`Claim failed (${r.status})`)
+      return
+    }
+    setStatus(`Paired: ${data.name}`)
+    await onPaired()
   }
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-      <div className="glass" style={{ padding: 18 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
-          <div>
-            <div className="h1">Gateways</div>
-            <div className="sub">Manage up to 4 connections. (Tokenless pairing flow ships next milestone.)</div>
-          </div>
-          <div className="badge">{conns.length}/4</div>
-        </div>
+    <div className="glass" style={{ padding: 18 }}>
+      <div>
+        <div className="h1">Pair a Gateway</div>
+        <div className="sub">You create a pairing code in the UI. You claim it from the gateway host. Tokens never stay in the browser.</div>
+      </div>
 
-        <div className="hr" style={{ margin: '14px 0' }} />
+      <div className="hr" style={{ margin: '14px 0' }} />
 
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
         <div style={{ display: 'grid', gap: 10 }}>
           <label>
-            <div className="sub" style={{ marginBottom: 6 }}>Name</div>
-            <input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="CM5-main" />
+            <div className="sub" style={{ marginBottom: 6 }}>Gateway name</div>
+            <input className="input" value={name} onChange={e => setName(e.target.value)} />
           </label>
           <label>
-            <div className="sub" style={{ marginBottom: 6 }}>Base URL</div>
-            <input className="input" value={baseUrl} onChange={e => setBaseUrl(e.target.value)} placeholder="https://gateway.example.com" />
+            <div className="sub" style={{ marginBottom: 6 }}>Gateway base URL</div>
+            <input className="input" value={baseUrl} onChange={e => setBaseUrl(e.target.value)} />
           </label>
           <label>
-            <div className="sub" style={{ marginBottom: 6 }}>Gateway token</div>
+            <div className="sub" style={{ marginBottom: 6 }}>Gateway token (used once during claim)</div>
             <input className="input mono" value={token} onChange={e => setToken(e.target.value)} placeholder="paste token" />
           </label>
 
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-            <button className="btn" onClick={test}>Test</button>
-            <button className="btn btn-primary" onClick={add}>Save</button>
+            <button className="btn btn-primary" onClick={start}>Generate pairing code</button>
             <div className="sub">{status}</div>
           </div>
-        </div>
-      </div>
 
-      <div className="glass" style={{ padding: 18 }}>
-        <div className="h1" style={{ marginBottom: 10 }}>Existing</div>
-        {conns.length === 0 ? (
-          <div className="sub">No connections yet.</div>
-        ) : (
-          <div style={{ display: 'grid', gap: 10 }}>
-            {conns.map(c => (
-              <div key={c.id} className="glass-soft" style={{ padding: 14 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
-                  <div>
-                    <div style={{ fontWeight: 800 }}>{c.name}</div>
-                    <div className="sub mono">{c.baseUrl}</div>
-                  </div>
-                  <button className="btn" onClick={() => del(c.id)}>Remove</button>
-                </div>
-              </div>
-            ))}
+          {code ? (
+            <div className="glass-soft" style={{ padding: 14 }}>
+              <div className="sub">Pairing code</div>
+              <div className="mono" style={{ fontWeight: 900, marginTop: 8 }}>{code}</div>
+            </div>
+          ) : null}
+        </div>
+
+        <div className="glass-soft" style={{ padding: 16 }}>
+          <div style={{ fontWeight: 900, marginBottom: 6 }}>Instructions</div>
+          <div className="sub" style={{ lineHeight: 1.7 }}>
+            1) Click <b>Generate pairing code</b>.<br />
+            2) On the gateway host (where OpenClaw runs), run the one-liner below.<br />
+            3) Refresh — the gateway will appear under your API key.
           </div>
-        )}
+
+          <div className="hr" style={{ margin: '12px 0' }} />
+
+          <div className="sub" style={{ marginBottom: 8 }}>One-liner</div>
+          <pre className="mono" style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{code ? oneLiner() : 'Generate a code first.'}</pre>
+
+          <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
+            <button className="btn" onClick={claimFromHere} disabled={!code || !token}>Claim from here (dev)</button>
+          </div>
+        </div>
       </div>
     </div>
   )
 }
 
-function Chat({ active }: { active: GatewayConn | null }) {
+function Chat({ apiKey, active }: { apiKey: string, active: Connection | null }) {
   const [text, setText] = useState('')
   const [out, setOut] = useState<string>('')
 
   async function send() {
     if (!active) {
-      setOut('No active gateway. Add one first.')
+      setOut('No active gateway.')
       return
     }
     setOut('Sending...')
-    const r = await postJson('/api/gateway/send', {
-      baseUrl: active.baseUrl,
-      token: active.token,
-      sessionKey: 'agent:main:main',
-      message: text,
+    const r = await authedJson(apiKey, '/api/gateway/send', {
+      body: { connectionId: active.connectionId, sessionKey: 'agent:main:main', message: text },
     })
     setOut(JSON.stringify(r, null, 2))
   }
@@ -377,7 +420,7 @@ function Chat({ active }: { active: GatewayConn | null }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
         <div>
           <div className="h1">Chat</div>
-          <div className="sub">Proxy message send to the selected gateway session. Timeline + streaming next.</div>
+          <div className="sub">Send messages through your API key → server-side connection → gateway.</div>
         </div>
         <div className="badge">{active ? active.name : 'No gateway'}</div>
       </div>
@@ -407,89 +450,148 @@ function ComingSoon({ tab }: { tab: Tab }) {
     <div className="glass" style={{ padding: 18 }}>
       <div className="h1">Coming soon</div>
       <div className="sub" style={{ marginTop: 8 }}>
-        {tab} ships as focused milestones: pairing + tasks/collab, plugin catalog, bindings generator, keys, and audit.
+        {tab} ships as focused milestones: tasks/collab, plugin catalog, bindings generator, keys, and audit.
       </div>
     </div>
   )
 }
 
 function Onboarding({
-  conns,
-  upsert,
-  onFinish,
+  apiKey,
+  setApiKey,
+  onPaired,
 }: {
-  conns: GatewayConn[]
-  upsert: (c: GatewayConn) => void
-  onFinish: () => void
+  apiKey: string
+  setApiKey: (k: string) => void
+  onPaired: () => Promise<void>
 }) {
-  const [name, setName] = useState('CM5-main')
-  const [baseUrl, setBaseUrl] = useState('http://127.0.0.1:18789')
-  const [token, setToken] = useState('')
+  const [step, setStep] = useState<1 | 2 | 3>(apiKey ? 2 : 1)
+  const [localKey, setLocalKey] = useState(apiKey || genKey())
   const [status, setStatus] = useState('')
 
-  async function test() {
-    setStatus('Testing...')
-    const r = await postJson('/api/gateway/health', { baseUrl, token })
-    setStatus(r.ok ? `OK (${r.status})` : `FAIL (${r.status})`)
+  async function startPair() {
+    setStatus('Generating pairing code...')
+    const r = await authedJson(localKey, '/api/pair/start', {})
+    if (!r.ok) {
+      setStatus(`Failed (${r.status})`)
+      return
+    }
+    const code = String(r.data.code || '')
+    localStorage.setItem('infi.v2.lastPairCode', code)
+    setStatus('Pairing code generated. Go to Step 3.')
+    setStep(3)
   }
 
-  function saveAndEnter() {
-    const id = crypto.randomUUID()
-    upsert({ id, name: name || `Gateway ${conns.length + 1}`, baseUrl, token })
-    onFinish()
-  }
+  const code = (() => {
+    try { return localStorage.getItem('infi.v2.lastPairCode') || '' } catch { return '' }
+  })()
 
   return (
-    <div style={{ height: '100%', display: 'grid', placeItems: 'center', padding: 22 }}>
-      <div style={{ width: 'min(980px, 100%)', display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: 16 }}>
-        <div className="glass" style={{ padding: 24 }}>
-          <div className="h1 brand" style={{ fontSize: 26 }}>Welcome to INFI CONTROL</div>
-          <div className="sub" style={{ marginTop: 10, lineHeight: 1.6 }}>
-            Before you get a dashboard, we pair your first gateway.
-            Next milestone removes token pasting with a pairing-code flow.
+    <div style={{ height: '100%', display: 'grid', placeItems: 'center', padding: 24 }}>
+      <div style={{ width: 'min(1100px, 100%)' }}>
+        <div className="glass" style={{ padding: 26 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 14 }}>
+            <div>
+              <div className="h1 brand" style={{ fontSize: 28 }}>INFI CONTROL — Setup</div>
+              <div className="sub" style={{ marginTop: 8, lineHeight: 1.6 }}>
+                Full onboarding: generate an API key, then pair gateways with a one-time code.
+                This removes gateway tokens from the browser.
+              </div>
+            </div>
+            <div className="badge">liquid glass</div>
           </div>
 
           <div className="hr" style={{ margin: '16px 0' }} />
 
-          <div style={{ display: 'grid', gap: 10 }}>
-            <label>
-              <div className="sub" style={{ marginBottom: 6 }}>Gateway name</div>
-              <input className="input" value={name} onChange={e => setName(e.target.value)} />
-            </label>
-            <label>
-              <div className="sub" style={{ marginBottom: 6 }}>Gateway base URL</div>
-              <input className="input" value={baseUrl} onChange={e => setBaseUrl(e.target.value)} />
-              <div className="sub" style={{ marginTop: 8 }}>
-                If this gateway is local-only, the site won’t reach it until we ship the pairing relay.
-              </div>
-            </label>
-            <label>
-              <div className="sub" style={{ marginBottom: 6 }}>Gateway token</div>
-              <input className="input mono" value={token} onChange={e => setToken(e.target.value)} placeholder="paste token" />
-            </label>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div className="glass-soft" style={{ padding: 18 }}>
+              <div style={{ fontWeight: 950, marginBottom: 10 }}>Step {step} / 3</div>
 
-            <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginTop: 6 }}>
-              <button className="btn" onClick={test}>Test connection</button>
-              <button className="btn btn-primary" onClick={saveAndEnter}>Enter dashboard</button>
-              <div className="sub">{status}</div>
+              {step === 1 ? (
+                <>
+                  <div className="sub" style={{ lineHeight: 1.7 }}>
+                    Create your INFI API key. This key authorizes the website to list and use your paired gateways.
+                  </div>
+                  <div style={{ marginTop: 12 }}>
+                    <div className="sub" style={{ marginBottom: 6 }}>API key</div>
+                    <input className="input mono" value={localKey} onChange={e => setLocalKey(e.target.value)} />
+                    <div className="sub" style={{ marginTop: 8 }}>Store it somewhere safe. Anyone with this key can use your connections.</div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
+                    <button
+                      className="btn btn-primary"
+                      onClick={() => {
+                        setApiKey(localKey)
+                        setStep(2)
+                      }}
+                    >
+                      Save API key
+                    </button>
+                  </div>
+                </>
+              ) : null}
+
+              {step === 2 ? (
+                <>
+                  <div className="sub" style={{ lineHeight: 1.7 }}>
+                    Generate a pairing code. You will claim it from the gateway host.
+                  </div>
+                  <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
+                    <button className="btn btn-primary" onClick={startPair}>Generate pairing code</button>
+                    <button className="btn" onClick={() => setStep(1)}>Back</button>
+                  </div>
+                  <div className="sub" style={{ marginTop: 10 }}>{status}</div>
+                </>
+              ) : null}
+
+              {step === 3 ? (
+                <>
+                  <div className="sub" style={{ lineHeight: 1.7 }}>
+                    Run this on the gateway host (where OpenClaw runs). Replace baseUrl/token/name.
+                  </div>
+                  <div className="hr" style={{ margin: '12px 0' }} />
+                  <div className="sub" style={{ marginBottom: 8 }}>Pairing code</div>
+                  <div className="mono" style={{ fontWeight: 900 }}>{code || '(missing code — go back and generate one)'} </div>
+                  <div className="sub" style={{ marginTop: 12, marginBottom: 6 }}>Command</div>
+                  <pre className="mono" style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
+{`curl -sS -X POST ${window.location.origin}/api/pair/claim \\
+  -H 'content-type: application/json' \\
+  -d '{"code":"${code}","name":"CM5-main","baseUrl":"http://127.0.0.1:18789","token":"<GATEWAY_TOKEN>"}'`}
+                  </pre>
+                  <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
+                    <button
+                      className="btn btn-primary"
+                      onClick={async () => {
+                        await onPaired()
+                      }}
+                    >
+                      I ran it — refresh connections
+                    </button>
+                    <button className="btn" onClick={() => setStep(2)}>Back</button>
+                  </div>
+                </>
+              ) : null}
+            </div>
+
+            <div className="glass-soft" style={{ padding: 18 }}>
+              <div style={{ fontWeight: 950, marginBottom: 10 }}>What this solves</div>
+              <div className="sub" style={{ lineHeight: 1.75 }}>
+                • The browser never stores gateway tokens<br />
+                • Pairing codes expire quickly (10 minutes)<br />
+                • API key gates access to your connections<br />
+                • Next milestone: tasks/collab + multi-gateway orchestration
+              </div>
+
+              <div className="hr" style={{ margin: '14px 0' }} />
+              <div className="sub" style={{ lineHeight: 1.75 }}>
+                This is the start of the “parent key → derived key” model you asked for.
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="glass-soft" style={{ padding: 18 }}>
-          <div style={{ fontWeight: 900, fontSize: 14 }}>What you get</div>
-          <div className="sub" style={{ marginTop: 10, lineHeight: 1.7 }}>
-            • Liquid-glass command center UI<br />
-            • 4 gateway slots<br />
-            • Chat + healthcheck now<br />
-            • Tasks/collab + pairing code next
-          </div>
-
-          <div className="hr" style={{ margin: '14px 0' }} />
-
-          <div className="sub" style={{ lineHeight: 1.7 }}>
-            Design goal: high-end, clean, "queen" UI — minimal clutter, strong hierarchy, glass depth.
-          </div>
+        <div className="sub" style={{ marginTop: 10, textAlign: 'center' }}>
+          If the UI looks unchanged, hard refresh (Ctrl+Shift+R) — Netlify can cache aggressively.
         </div>
       </div>
     </div>
