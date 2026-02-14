@@ -39,13 +39,34 @@ a { color: inherit; }
 
 /* Liquid glass UI primitives */
 .glass {
-  background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+  position: relative;
+  background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.03));
   background-color: var(--glass);
   border: 1px solid var(--stroke);
   border-radius: 18px;
   box-shadow: var(--shadow);
-  backdrop-filter: blur(14px) saturate(150%);
-  -webkit-backdrop-filter: blur(14px) saturate(150%);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  overflow: hidden;
+}
+
+.glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(900px 240px at 20% 0%, rgba(255,255,255,0.14), transparent 60%),
+              radial-gradient(700px 260px at 80% 10%, rgba(123,183,255,0.10), transparent 55%);
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+.glass::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.12;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
+  pointer-events: none;
 }
 
 .glass-soft {
@@ -81,7 +102,11 @@ a { color: inherit; }
   padding: 10px 12px;
   border-radius: 14px;
   cursor: pointer;
-  transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+}
+
+.btn:active {
+  transform: translateY(0px) scale(0.99);
 }
 
 .btn:hover {
@@ -133,3 +158,17 @@ a { color: inherit; }
   background-clip: text;
   color: transparent;
 }
+
+@keyframes floaty {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+  100% { transform: translateY(0px); }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0px); }
+}
+
+.anim-fadeUp { animation: fadeUp 420ms ease both; }
+.anim-floaty { animation: floaty 3.8s ease-in-out infinite; }

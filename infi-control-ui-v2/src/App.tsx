@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import './index.css'
+import { DOCS } from './docs'
 
 type Tab = 'dashboard' | 'chat' | 'gateways' | 'agents' | 'plugins' | 'bindings' | 'keys' | 'audit' | 'settings'
 
@@ -226,6 +227,7 @@ function Nav({ tab, setTab }: { tab: Tab, setTab: (t: Tab) => void }) {
 
 function Dashboard({ apiKey, active, connections }: { apiKey: string, active: Connection | null, connections: Connection[] }) {
   const [health, setHealth] = useState<string>('')
+  const [showTunnel, setShowTunnel] = useState(false)
 
   async function check() {
     if (!active) return
@@ -259,6 +261,15 @@ function Dashboard({ apiKey, active, connections }: { apiKey: string, active: Co
               <button className="btn btn-primary" onClick={check}>Healthcheck</button>
             </div>
             <div className="sub" style={{ marginTop: 10 }}>{health || 'Run a healthcheck to verify auth + reachability.'}</div>
+            <div style={{ marginTop: 10, display: 'flex', gap: 10, alignItems: 'center' }}>
+              <button className="btn" onClick={() => setShowTunnel(v => !v)}>
+                {showTunnel ? 'Hide tunnel guide' : 'Show tunnel guide'}
+              </button>
+              <div className="sub">If baseUrl is 127.0.0.1, the dashboard cannot reach your gateway.</div>
+            </div>
+            {showTunnel ? (
+              <pre className="glass-soft mono" style={{ marginTop: 12, padding: 14, whiteSpace: 'pre-wrap' }}>{DOCS.tunnel.body}</pre>
+            ) : null}
           </div>
 
           <div className="glass-soft" style={{ padding: 16 }}>
@@ -511,7 +522,7 @@ function Onboarding({
   onPaired: () => Promise<void>
 }) {
   const initialKey = apiKey || genKey()
-  const [step, setStep] = useState<1 | 2 | 3>(1)
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1)
   const [localKey, setLocalKey] = useState(initialKey)
   const [status, setStatus] = useState('')
 
@@ -523,13 +534,13 @@ function Onboarding({
     setStatus('Generating pairing code...')
     const r = await authedJson(localKey, '/api/pair/start', {})
     if (!r.ok) {
-      setStatus(`Failed (${r.status})`)
+      setStatus(String(r.data?.error || `Failed (${r.status})`))
       return
     }
     const code = String(r.data.code || '')
     localStorage.setItem('infi.v2.lastPairCode', code)
-    setStatus('Pairing code generated. Go to Step 3.')
-    setStep(3)
+    setStatus('Pairing code generated. Continue to Step 4.')
+    setStep(4)
   }
 
   const code = (() => {
@@ -555,7 +566,7 @@ function Onboarding({
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
             <div className="glass-soft" style={{ padding: 18 }}>
-              <div style={{ fontWeight: 950, marginBottom: 10 }}>Step {step} / 3</div>
+              <div style={{ fontWeight: 950, marginBottom: 10 }}>Step {step} / 4</div>
 
               {step === 1 ? (
                 <>
@@ -599,30 +610,65 @@ function Onboarding({
               {step === 3 ? (
                 <>
                   <div className="sub" style={{ lineHeight: 1.7 }}>
-                    Run this on the gateway host (where OpenClaw runs). Replace baseUrl/token/name.
+                    One-time gateway setup: run this on the gateway host (where OpenClaw runs). This stores the gateway connection encrypted on the server under your API key.
                   </div>
+
                   <div className="hr" style={{ margin: '12px 0' }} />
-                  <div className="sub" style={{ marginBottom: 8 }}>Pairing code</div>
-                  <div className="mono" style={{ fontWeight: 900 }}>{code || '(missing code — go back and generate one)'} </div>
-                  <div className="sub" style={{ marginTop: 12, marginBottom: 6 }}>Command</div>
-                  <pre className="mono" style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
-{`curl -sS -X POST ${window.location.origin}/api/pair/claim \\
+
+                  <div className="sub" style={{ marginBottom: 8 }}>Command</div>
+                  <pre className="mono" style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{
+`curl -sS -X POST ${window.location.origin}/api/apikey/register \\
+  -H 'authorization: Bearer ${localKey}' \\
   -H 'content-type: application/json' \\
-  -d '{"code":"${code}","name":"CM5-main","baseUrl":"http://127.0.0.1:18789","token":"<GATEWAY_TOKEN>"}'`}
-                  </pre>
+  -d '{"name":"CM5-main","baseUrl":"http://127.0.0.1:18789","token":"<GATEWAY_TOKEN>"}'`
+                  }</pre>
+
+                  <div className="sub" style={{ marginTop: 10, lineHeight: 1.7 }}>
+                    Now continue and finish pairing by pasting the pairing code.
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
+                    <button className="btn btn-primary" onClick={() => setStep(4)}>Continue</button>
+                    <button className="btn" onClick={() => setStep(2)}>Back</button>
+                  </div>
+                </>
+              ) : null}
+
+              {step === 4 ? (
+                <>
+                  <div className="sub" style={{ lineHeight: 1.7 }}>
+                    Paste the pairing code and finish.
+                  </div>
+
+                  <div style={{ marginTop: 12 }}>
+                    <div className="sub" style={{ marginBottom: 6 }}>Pairing code</div>
+                    <input
+                      className="input mono"
+                      defaultValue={code}
+                      onChange={e => localStorage.setItem('infi.v2.lastPairCode', e.target.value)}
+                      placeholder="paste code"
+                    />
+                    <div className="sub" style={{ marginTop: 10 }}>{status}</div>
+                  </div>
+
                   <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
                     <button
                       className="btn btn-primary"
                       onClick={async () => {
-                        setStatus('Checking connections...')
+                        setStatus('Finishing pair...')
+                        const c = localStorage.getItem('infi.v2.lastPairCode') || ''
+                        const r = await authedJson(localKey, '/api/pair/finish', { body: { code: c } })
+                        if (!r.ok) {
+                          setStatus(String(r.data?.error || `Failed (${r.status})`))
+                          return
+                        }
                         await onPaired()
-                        setStatus('If you still see onboarding, reload the page.')
-                        setTimeout(() => window.location.reload(), 350)
+                        setTimeout(() => window.location.reload(), 250)
                       }}
                     >
-                      I ran it — refresh connections
+                      Finish pairing
                     </button>
-                    <button className="btn" onClick={() => setStep(2)}>Back</button>
+                    <button className="btn" onClick={() => setStep(3)}>Back</button>
                   </div>
                 </>
               ) : null}
